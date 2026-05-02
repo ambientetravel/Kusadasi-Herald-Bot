@@ -4,18 +4,18 @@ import requests
 import os
 import sys
 
-# 1. Securely fetch keys from GitHub Secrets
+# Fetch keys from GitHub Secrets
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Safety Check: Exit if keys are missing
 if not all([GEMINI_KEY, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]):
-    print("❌ Error: One or more GitHub Secrets are missing!")
+    print("❌ Error: Missing GitHub Secrets!")
     sys.exit(1)
 
 genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+# تغییر نام مدل به نسخه پایدار و جدید
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 def send_to_telegram(file_path, caption):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendDocument"
@@ -26,32 +26,30 @@ def send_to_telegram(file_path, caption):
             response = requests.post(url, data=payload, files=files)
             return response.json()
     except Exception as e:
-        print(f"❌ Telegram Upload Error: {e}")
+        print(f"❌ Telegram Error: {e}")
         return None
 
-# 2. Logic to determine edition based on Server Time (UTC)
 now_hour = datetime.datetime.utcnow().hour
-if 5 <= now_hour <= 12:
-    edition = "Morning (10:00 AM)"
-else:
-    edition = "Evening (21:30 PM)"
-
+edition = "Morning (10:00 AM)" if 5 <= now_hour <= 12 else "Evening (21:30 PM)"
 today = datetime.datetime.now().strftime("%Y-%m-%d")
-weekday = datetime.datetime.now().weekday() 
+weekday = datetime.datetime.now().weekday()
 
 recipe_types = ["Persian", "Turkish", "Persian", "Turkish", "Spanish", "Italian", "Persian"]
 today_recipe = recipe_types[weekday]
 
 prompt = f"""
 Act as the Senior Editor of 'Kusadasi Herald'. Generate a high-end Persian HTML newspaper for the {edition}.
-Output ONLY the raw HTML code.
+Local news: Kusadasi, Unique Residence, Soke, Port Cruises, Weather for Kusadasi, Rome, Barcelona.
+Global: 4 Iran news (Washington focus), 2 Rome, 2 Barcelona news.
+Kitchen: {today_recipe} dish with Migros basket.
+Output ONLY the raw HTML code without markdown tags.
 """
 
 print(f"⏳ Generating {edition} for {today}...")
 
 try:
     response = model.generate_content(prompt)
-    # Ensure no extra markdown formatting is in the way
+    # پاکسازی متن از هرگونه علامت اضافی مارک‌داون
     raw_text = response.text
     html_content = raw_text.replace("```html", "").replace("```", "").strip()
 
@@ -60,7 +58,6 @@ try:
         f.write(html_content)
 
     print(f"✅ File {file_name} created. Sending to Telegram...")
-    
     status = send_to_telegram(file_name, f"📰 <b>Kusadasi Herald - {edition}</b>\n🗓 {today}")
     
     if status and status.get("ok"):
@@ -68,7 +65,6 @@ try:
     else:
         print(f"❌ Telegram Failed: {status}")
         sys.exit(1)
-
 except Exception as e:
     print(f"💥 Critical Crash: {e}")
     sys.exit(1)
