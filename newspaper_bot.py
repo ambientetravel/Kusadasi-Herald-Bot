@@ -56,10 +56,16 @@ DESIGN: Use internal CSS. Corporate colors: Red, Green, Blue. Output ONLY the ra
 """
 
 response = model.generate_content(prompt)
-html_content = response.text.replace("```html", "").replace("```", "").strip()
+    # This line ensures we only get the HTML content even if Gemini adds markdown tags
+    html_content = response.text.replace("```html", "").replace("```", "").strip()
 
-file_name = f"Kusadasi_Herald_{today}_{edition.split()[0]}.html"
-with open(file_name, "w", encoding="utf-8") as f:
-    f.write(html_content)
+    file_name = f"Kusadasi_Herald_{today}_{edition.split()[0]}.html"
+    with open(file_name, "w", encoding="utf-8") as f:
+        f.write(html_content)
 
-send_to_telegram(file_name, f"📰 <b>Kusadasi Herald - {edition}</b>\n🗓 {today}\n📍 Kusadasi | Rome | Barcelona")
+    # Send to Telegram
+    result = send_to_telegram(file_name, f"📰 <b>Kusadasi Herald - {edition}</b>\n🗓 {today}")
+    print("Telegram Response:", result)
+except Exception as e:
+    print(f"Error occurred: {e}")
+    exit(1) # This tells GitHub the run failed if an error happens
