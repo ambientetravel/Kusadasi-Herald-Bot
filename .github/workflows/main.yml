@@ -1,10 +1,8 @@
 name: Run Newspaper Bot
 on:
   schedule:
-    # 07:00 UTC = 10:00 AM Kusadasi Time
-    # 18:30 UTC = 09:30 PM Kusadasi Time
     - cron: '0 7,18 * * *'
-  workflow_dispatch: # Allows you to trigger it manually anytime
+  workflow_dispatch:
 
 jobs:
   run-bot:
@@ -14,7 +12,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Python Environment
-        uses: actions/set-uppython@v4
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
