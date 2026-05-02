@@ -2,9 +2,9 @@ import os
 import sys
 import datetime
 import requests
-from google import genai
+import json
 
-# --- 1. AUTHENTICATION ---
+# --- 1. AUTH & CONFIG ---
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY")
 TG_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TG_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
@@ -13,7 +13,19 @@ if not all([GEMINI_KEY, TG_TOKEN, TG_CHAT_ID]):
     print("FATAL: Missing GitHub Secrets.")
     sys.exit(1)
 
-client = genai.Client(api_key=GEMINI_KEY)
+def generate_content_direct(prompt):
+    # استفاده از آدرس مستقیم API برای دور زدن باگ‌های کتابخانه‌ای
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code != 200:
+        raise Exception(f"Google API Error: {response.status_code} - {response.text}")
+    
+    data = response.json()
+    return data['candidates'][0]['content']['parts'][0]['text']
 
 def send_to_telegram(file_path, caption):
     url = f"https://api.telegram.org/bot{TG_TOKEN}/sendDocument"
@@ -21,41 +33,30 @@ def send_to_telegram(file_path, caption):
         with open(file_path, 'rb') as doc:
             payload = {'chat_id': TG_CHAT_ID, 'caption': caption, 'parse_mode': 'HTML'}
             files = {'document': (os.path.basename(file_path), doc, 'text/html')}
-            response = requests.post(url, data=payload, files=files)
-            return response.json()
+            r = requests.post(url, data=payload, files=files)
+            return r.json()
     except Exception as e:
-        print(f"Telegram Upload Failed: {e}")
+        print(f"Telegram Failed: {e}")
         return None
 
 # --- 2. LOGIC ---
 now = datetime.datetime.now(datetime.timezone.utc)
 is_morning = 4 <= now.hour <= 11 
-edition = "Morning (10:00 AM)" if is_morning else "Evening (21:30 PM)"
+edition = "Morning" if is_morning else "Evening"
 today_str = now.strftime("%Y-%m-%d")
-weekday = now.weekday()
-
-recipe_map = ["Persian", "Turkish", "Persian", "Turkish", "Spanish", "Italian", "Persian"]
-today_recipe = recipe_map[weekday]
 
 prompt = f"""
-Act as the Senior Editor for 'Kusadasi Herald'. Output a high-end professional Persian HTML newspaper.
-EDITION: {edition} for {today_str}.
-Kusadasi local news, Cruises, Weather (Kusadasi, Rome, Barcelona), Iran news (Washington focus), 
-2 Rome news, 2 Barcelona news. Recipe: {today_recipe}.
-Output ONLY raw HTML code. No markdown.
+Act as the Senior Editor for 'Kusadasi Herald'. Output a professional Persian HTML newspaper for {edition} {today_str}.
+Include: Kusadasi news, Port Cruises, Weather, Iran/Washington news, Rome/Barcelona news.
+Output ONLY raw HTML. No markdown tags.
 """
 
-print(f"🚀 Attempting to generate {edition} using Gemini 1.5 Flash...")
+print(f"🚀 Direct API Call for {edition} edition...")
 
 try:
-    # اصلاح نام مدل به ساده‌ترین حالت برای جلوگیری از خطای 404
-    response = client.models.generate_content(
-        model="gemini-1.5-flash", 
-        contents=prompt
-    )
+    html_body = generate_content_direct(prompt)
     
-    html_body = response.text.strip()
-    # حذف هرگونه تگ مارک‌داون احتمالی
+    # Cleanup any markdown if AI ignores the instruction
     if "```html" in html_body:
         html_body = html_body.split("```html")[1].split("```")[0].strip()
     elif "```" in html_body:
@@ -68,11 +69,11 @@ try:
     status = send_to_telegram(filename, f"📰 <b>Kusadasi Herald: {edition}</b>\n🗓 {today_str}")
     
     if status and status.get("ok"):
-        print("🎉 Delivered successfully!")
+        print("🎉 Delivered successfully via Direct API!")
     else:
         print(f"⚠️ Telegram error: {status}")
         sys.exit(1)
 
 except Exception as e:
-    print(f"🛑 Engine Failure: {e}")
+    print(f"🛑 Critical Error: {e}")
     sys.exit(1)
