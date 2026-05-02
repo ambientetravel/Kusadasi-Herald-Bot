@@ -15,7 +15,7 @@ if not all([GEMINI_KEY, TG_TOKEN, TG_CHAT_ID]):
 
 def generate_content_direct(prompt):
     # استفاده از آدرس مستقیم API برای دور زدن باگ‌های کتابخانه‌ای
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={GEMINI_KEY}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}]
