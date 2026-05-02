@@ -110,7 +110,28 @@ today_str = now.strftime("%Y-%m-%d")
 today_human_en = now.strftime("%A, %d %B %Y")
 
 
-# --- 4. PROMPT (Persian editorial brief) ---
+# --- 4. HTML SHELL (Python owns this — CSS never goes through the model) ---
+HTML_HEAD = f"""<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#d92020">
+<title>روزنامه کوشاداسی هرالد سان — {edition_fa} {today_str}</title>
+{HEAD_FONTS}
+{CSS_TEMPLATE}
+</head>
+<body>
+<div class="paper">
+"""
+
+HTML_TAIL = """
+</div>
+</body>
+</html>"""
+
+
+# --- 5. PROMPT (asks for inner content only — saves ~5K tokens of CSS regurgitation) ---
 PROMPT = f"""شما سردبیر ارشد روزنامه «کوشاداسی هرالد سان» هستید — یک روزنامه فارسی‌زبان روزانه برای جامعه فارسی‌زبان در کوشاداسی (سواحل اژه ترکیه) و خارج از کشور.
 
 تاریخ امروز میلادی: {today_human_en} ({today_str})
@@ -118,86 +139,67 @@ PROMPT = f"""شما سردبیر ارشد روزنامه «کوشاداسی هر
 
 == دستورالعمل کلیدی ==
 از Google Search برای یافتن اخبار واقعی و امروزی استفاده کنید. اخبار جعلی ننویسید — فقط آنچه از نتایج جستجو تأیید شده. منابع اولویت‌دار:
-1. بی‌بی‌سی فارسی (bbc.com/persian)
-2. صدای آمریکا فارسی / ایران اینترنشنال
-3. یورونیوز (euronews.com)
-4. رسانه‌های معتبر داخل ایران (در صورت دقیق بودن)
-5. اخبار محلی ترکیه (آیدین، کوشاداسی، Hürriyet، Habertürk)
-6. اخبار ورزشی ایران (وارزش، طرفداری، فدراسیون فوتبال)
-7. سوپر لیگ ترکیه (Turkish Süper Lig)
-8. اخبار ایتالیا (رم) و اسپانیا (بارسلونا)
+- بی‌بی‌سی فارسی، صدای آمریکا فارسی، ایران اینترنشنال، یورونیوز
+- رسانه‌های معتبر داخل ایران (در صورت دقیق بودن)
+- اخبار محلی ترکیه (Hürriyet، Habertürk، Aydın Post)
+- ورزش ایران (طرفداری، وارزش، فدراسیون فوتبال) و Turkish Süper Lig
+- اخبار ایتالیا (رم) و اسپانیا (بارسلونا — به‌ویژه FC Barcelona)
 
-== الزامات خروجی ==
-- فقط HTML خام تولید کنید (بدون ```html یا توضیح اضافی، با <!DOCTYPE html> شروع و با </html> پایان).
-- زبان فارسی، چینش راست-به-چپ.
-- <title>: «روزنامه کوشاداسی هرالد سان — {edition_fa} {today_str}»
-- لوگوی ماست‌هد: «کوشاداسی هرالد سان»
-- زیرعنوان انگلیسی: «— The Kusadasi Herald Sun · Persian {edition_en} Edition —»
-- هیچ ایمیل، آدرس وب‌سایت، یا «info@» یا «https://» در footer نگنجانید.
-- در footer فقط فهرست منابع استفاده‌شده + جمله‌ای کوتاه + تاریخ شماره بعدی.
+== خروجی — مهم ==
+فقط HTML داخلی div.paper را تولید کنید. هیچ <!DOCTYPE>, <html>, <head>, <body>, <style>, <link>, <div class="paper">, و یا </div> پایانی ننویسید — Python آن‌ها را اضافه می‌کند.
+فقط با <div class="masthead"> شروع کنید و با </div> پایانی footer به اتمام برسانید.
+بدون ```html و بدون توضیح اضافی.
 
-== بخش‌ها به ترتیب ==
-1. ماست‌هد (با date strip و شماره)
-2. Teaser bar — ۴ تا ۶ تیتر مهم این شماره
-3. «گزارش جهانی · ایران» (section-header red) — ۲ تا ۳ مقاله از منابع فارسی‌زبان (بی‌بی‌سی فارسی، VOA، یورونیوز)
-4. «ورزش ایران» (section-header gold) — ۱ تا ۲ مقاله (تیم ملی فوتبال، لیگ برتر، کشتی، والیبال، یا ورزشکاران ایرانی)
-5. «کوشاداسی · محلی» (section-header) — ۲ مقاله محلی (توریسم، بندر، رویدادهای آیدین/کوشاداسی)
-6. «ورزش محلی · ترکیه» (section-header gold) — ۱ مقاله از Turkish Süper Lig یا ورزش منطقه آیدین
-7. «گزارش از رم» (section-header blue) — ۱ مقاله از رم/ایتالیا
-8. «بارسلونا · اسپانیا» (section-header green) — ۱ مقاله (FC Barcelona ترجیح دارد)
-9. «بازار سوکه» (box) — قیمت نان، گوشت، پنیر گوسفندی، گوجه، شیر، با فلش‌های ↑ ↓ ⟷
-10. «نرخ ارز» (box) — USD/TRY، EUR/TRY، USD/تومان، یورو/تومان، نفت برنت
-11. «آب و هوا» (section-header blue) — weather-grid سه روز کوشاداسی + city-weather سه شهر (کوشاداسی، رم، بارسلونا)
-12. «کلمه ترکی روز» (turkish-word) — یک کلمه/عبارت ترکی روزمره با ترجمه فارسی و مثال
-13. «در چنین روزی» (history-box) — ۳ رویداد تاریخی این روز
-14. «نکته بهداشتی» (health-tip) — مناسب سن ۷۰+
-15. «آشپزی · دستور روز» (recipe-box) — یک دستور غذای ساده ایرانی، ترکی یا مدیترانه‌ای
-16. «سبد خرید میگروس» (migros-box) — مواد لازم دستور بالا با قیمت‌های امروز و جمع کل
-17. «closing» — پیام پایانی کوتاه و گرم
-18. «footer» — فهرست منابع، colophon، تاریخ شماره بعدی. هیچ ایمیل/وب‌سایت/تماس.
-
-== الگوی CSS (عیناً در <head> قرار دهید) ==
-{CSS_TEMPLATE}
-
-== فونت‌ها (در <head> قرار دهید قبل از <style>) ==
-{HEAD_FONTS}
-
-== ساختار body (محتوای واقعی را پر کنید، کلاس‌ها را تغییر ندهید) ==
-<body>
-<div class="paper">
-  <div class="masthead">
-    <div class="top-line"><span>کوشاداسی · ساحل اژه · رم · بارسلونا</span><span>★ شماره [N] · سال یکم</span></div>
-    <div class="masthead-block">
-      <div class="roozname-label">روزنامه</div>
-      <div class="masthead-logo">کوشاداسی هرالد سان</div>
-    </div>
-    <div class="english-sub">— The Kusadasi Herald Sun · Persian {edition_en} Edition —</div>
-    <div class="date-strip">
-      <span class="edition">{edition_fa}</span>
-      <span>[تاریخ شمسی فارسی]</span>
-      <span class="issue">{today_str}</span>
-    </div>
+== ماست‌هد دقیقاً به این شکل ==
+<div class="masthead">
+  <div class="top-line"><span>کوشاداسی · ساحل اژه · رم · بارسلونا</span><span>★ شماره [N] · سال یکم</span></div>
+  <div class="masthead-block">
+    <div class="roozname-label">روزنامه</div>
+    <div class="masthead-logo">کوشاداسی هرالد سان</div>
   </div>
-  <div class="teaser-bar"><strong>◂ در این شماره ◂</strong> [4-6 تیتر جداشده با ·]</div>
-  [section-header red] [مقالات ایران/جهان]
-  [section-header gold] [ورزش ایران]
-  [section-header] [کوشاداسی محلی]
-  [section-header gold] [ورزش محلی ترکیه]
-  [section-header blue] [رم]
-  [section-header green] [بارسلونا]
-  [section-header] [بازار سوکه + نرخ ارز]
-  [section-header blue] [آب و هوا]
-  [turkish-word]
-  [history-box]
-  [health-tip]
-  [section-header green] [دستور آشپزی]
-  [migros-box]
-  [closing]
-  [footer]
+  <div class="english-sub">— The Kusadasi Herald Sun · Persian {edition_en} Edition —</div>
+  <div class="date-strip">
+    <span class="edition">{edition_fa}</span>
+    <span>[تاریخ شمسی فارسی این روز را بنویسید]</span>
+    <span class="issue">{today_str}</span>
+  </div>
 </div>
-</body>
 
-اکنون کل HTML را تولید کنید."""
+== کلاس‌های مجاز CSS (دقیقاً همین‌ها را استفاده کنید) ==
+.teaser-bar | .article | .article-kicker | h2.lead | h2.sub-lead | h3.deck | .byline-row > .headshot, .name | .drop | blockquote
+.section-header (با variants .red .blue .green .gold)
+.box | .box-title | .box-row > .label, .value | .up .down .same
+.weather-grid > .weather-cell > .day .temp .cond
+.city-weather > .cell > .city-name .city-temp
+.turkish-word > .turkish-title .turkish-main .turkish-meaning .turkish-ex
+.history-box > .history-title .history-item > .history-year
+.health-tip > .health-title .health-text
+.recipe-box > .recipe-title .recipe-heading .recipe-text
+.migros-box > .migros-title .migros-item > .migros-name .migros-price | .migros-total
+.closing > .closing-title .closing-text
+.footer > .colophon
+
+== بخش‌ها به ترتیب (با section-header مناسب قبل از هر بخش که عنوان دارد) ==
+1. <div class="masthead">...</div>
+2. <div class="teaser-bar"><strong>◂ در این شماره ◂</strong> ۴ تا ۶ تیتر · جداشده · با · نقطه‌های پررنگ</div>
+3. section-header red «گزارش جهانی · ایران» — سپس ۲ تا ۳ <article class="article"> با kicker, h2.lead, h3.deck, byline-row, پاراگراف‌ها (یکی drop داشته باشد)، و یک blockquote با نقل‌قول از منبع.
+4. section-header gold «ورزش ایران» — ۱ تا ۲ مقاله (فوتبال تیم ملی، لیگ برتر، کشتی، والیبال، ورزشکاران).
+5. section-header (بدون رنگ) «کوشاداسی · محلی» — ۲ مقاله محلی (توریسم، بندر، رویدادهای آیدین).
+6. section-header gold «ورزش محلی · ترکیه» — ۱ مقاله Süper Lig یا ورزش آیدین.
+7. section-header blue «گزارش از رم» — ۱ مقاله.
+8. section-header green «بارسلونا · اسپانیا» — ۱ مقاله (FC Barcelona ترجیح دارد).
+9. section-header (بدون رنگ) «بازار سوکه» — یک div.box با قیمت‌های نان، گوشت گوساله، پنیر گوسفندی، گوجه، شیر، باقالا — هر row با .up/.down/.same.
+10. div.box با عنوان «نرخ ارز» — USD/TRY، EUR/TRY، USD/تومان، EUR/تومان، نفت برنت.
+11. section-header blue «آب و هوا» — div.box شامل weather-grid (۳ روز کوشاداسی) و city-weather (کوشاداسی، رم، بارسلونا).
+12. div.turkish-word — یک عبارت ترکی روزمره با ترجمه فارسی و مثال.
+13. div.history-box — ۳ رویداد تاریخی این روز (با history-year پررنگ).
+14. div.health-tip — مناسب سن ۷۰+، مرتبط با هوای امروز یا فصل.
+15. section-header green «آشپزی · دستور روز» — div.recipe-box با عنوان، اجزا، طرز تهیه، یک یادداشت سلامتی کوتاه.
+16. div.migros-box — مواد لازم همان دستور با قیمت‌های امروز و جمع کل.
+17. div.closing — پیام پایانی کوتاه و گرم با closing-title و closing-text.
+18. div.footer — colophon، فهرست منابع امروز (مثلاً «منابع: BBC Persian · VOA · Euronews · Hürriyet · ...»)، تاریخ شماره بعدی. بدون ایمیل، بدون آدرس وب، بدون «info@» یا «https».
+
+اکنون شروع کنید — اولین کاراکتر باید < باشد و آخرین کاراکتر باید > باشد. فقط HTML داخلی."""
 
 
 # --- 5. GEMINI CALL (with Google Search grounding) ---
@@ -207,7 +209,7 @@ def generate(prompt):
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "tools": [{"google_search": {}}],
-        "generationConfig": {"maxOutputTokens": 32000, "temperature": 0.7}
+        "generationConfig": {"maxOutputTokens": 60000, "temperature": 0.7}
     }
     r = requests.post(url, headers=headers, json=payload, timeout=240)
     if r.status_code != 200:
@@ -219,7 +221,38 @@ def generate(prompt):
         if r.status_code != 200:
             raise Exception(f"Google API Error: {r.status_code} - {r.text}")
     data = r.json()
-    return data['candidates'][0]['content']['parts'][0]['text']
+    cand = data['candidates'][0]
+    finish = cand.get('finishReason', '')
+    text = cand['content']['parts'][0]['text']
+    if finish and finish not in ('STOP', 'MAX_TOKENS'):
+        print(f"⚠️  Gemini finishReason: {finish}")
+    elif finish == 'MAX_TOKENS':
+        print(f"⚠️  Gemini hit MAX_TOKENS — output may be truncated.")
+    return text
+
+
+def extract_inner(model_output):
+    """Strip markdown fences and any wrapping shell the model returns despite instructions."""
+    s = model_output.strip()
+    # Strip ```html ... ``` fences
+    if s.startswith("```"):
+        s = s.split("\n", 1)[1] if "\n" in s else s[3:]
+        if s.rstrip().endswith("```"):
+            s = s.rsplit("```", 1)[0]
+        s = s.strip()
+    # If model returned a full doc, extract just the .paper inner content
+    if "<div class=\"paper\"" in s:
+        s = s.split("<div class=\"paper\"", 1)[1]
+        s = s.split(">", 1)[1]  # past the opening tag's >
+        # Find the matching closing </body> or </html> and trim everything from the last </div> before it
+        for marker in ("</body>", "</html>"):
+            if marker in s:
+                s = s.split(marker, 1)[0]
+        # Remove trailing closing div(s) that wrapped .paper
+        s = s.rstrip()
+        if s.endswith("</div>"):
+            s = s[:-len("</div>")].rstrip()
+    return s.strip()
 
 
 # --- 6. TELEGRAM (multi-target) ---
@@ -238,21 +271,18 @@ def send_telegram(file_path, caption, chat_id):
 print(f"🚀 Generating {edition_en} edition for {today_str} via {MODEL}...")
 
 try:
-    html = generate(PROMPT)
+    raw = generate(PROMPT)
 except Exception as e:
     print(f"🛑 Generation failed: {e}")
     sys.exit(1)
 
-# Strip markdown fences if the model disregards instructions
-if "```html" in html:
-    html = html.split("```html", 1)[1].rsplit("```", 1)[0].strip()
-elif html.lstrip().startswith("```"):
-    html = html.split("```", 1)[1].rsplit("```", 1)[0].strip()
+inner = extract_inner(raw)
+html = HTML_HEAD + inner + HTML_TAIL
 
 filename = f"kusadasi-herald-sun-{edition_en.lower()}-{today_str}.html"
 with open(filename, "w", encoding="utf-8") as f:
     f.write(html)
-print(f"✅ Saved {filename} ({len(html):,} chars)")
+print(f"✅ Saved {filename} ({len(html):,} chars; model produced {len(inner):,} chars of body)")
 
 # Deliver to every chat ID in the secret (comma-separated)
 caption = f"📰 <b>Kusadasi Herald Sun — {edition_en}</b>\n🗓 {today_str}"
