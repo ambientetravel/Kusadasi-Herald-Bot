@@ -1,0 +1,29 @@
+name: Run Newspaper Bot
+on:
+  schedule:
+    # 07:00 UTC = 10:00 AM Kusadasi Time
+    # 18:30 UTC = 09:30 PM Kusadasi Time
+    - cron: '0 7,18 * * *'
+  workflow_dispatch: # Allows you to trigger it manually anytime
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python Environment
+        uses: actions/set-up-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Python Dependencies
+        run: pip install google-generativeai requests
+
+      - name: Execute Daily Edition
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python newspaper_bot.py
