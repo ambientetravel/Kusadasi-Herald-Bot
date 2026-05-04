@@ -202,33 +202,61 @@ PROMPT = f"""شما سردبیر ارشد روزنامه «کوشاداسی هر
 اکنون شروع کنید — اولین کاراکتر باید < باشد و آخرین کاراکتر باید > باشد. فقط HTML داخلی."""
 
 
-# --- 5. GEMINI CALL (with Google Search grounding) ---
+# --- 5. GEMINI CALL (with Google Search grounding, robust to filtered/empty responses) ---
+def _extract_text(data):
+    """Pull text from Gemini response, tolerant of various response shapes."""
+    candidates = data.get('candidates') or []
+    if not candidates:
+        block = data.get('promptFeedback', {}).get('blockReason')
+        raise Exception(f"Gemini returned no candidates (blockReason={block!r}; full={data})")
+    cand = candidates[0]
+    finish = cand.get('finishReason', '')
+    parts = (cand.get('content') or {}).get('parts') or []
+    text_chunks = [p['text'] for p in parts if isinstance(p, dict) and 'text' in p]
+    text = ''.join(text_chunks)
+    if not text:
+        raise Exception(
+            f"Gemini returned empty text (finishReason={finish!r}, parts={len(parts)}, "
+            f"safetyRatings={cand.get('safetyRatings')})"
+        )
+    if finish == 'MAX_TOKENS':
+        print(f"⚠️  Gemini hit MAX_TOKENS — output may be truncated ({len(text):,} chars).")
+    elif finish and finish != 'STOP':
+        print(f"⚠️  Gemini finishReason: {finish} ({len(text):,} chars)")
+    return text
+
+
+def _post(url, payload, timeout=240):
+    return requests.post(url, headers={'Content-Type': 'application/json'}, json=payload, timeout=timeout)
+
+
 def generate(prompt):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={GEMINI_KEY}"
-    headers = {'Content-Type': 'application/json'}
-    payload = {
+    base_payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "tools": [{"google_search": {}}],
         "generationConfig": {"maxOutputTokens": 60000, "temperature": 0.7}
     }
-    r = requests.post(url, headers=headers, json=payload, timeout=240)
+
+    # Attempt 1: with Google Search grounding (real news)
+    payload = dict(base_payload, tools=[{"google_search": {}}])
+    r = _post(url, payload)
     if r.status_code != 200:
-        # Fallback: retry without search grounding if the tool isn't available
-        if "google_search" in r.text or "tool" in r.text.lower():
-            print("⚠️  Search grounding unavailable, retrying without it...")
-            payload.pop("tools", None)
-            r = requests.post(url, headers=headers, json=payload, timeout=240)
-        if r.status_code != 200:
-            raise Exception(f"Google API Error: {r.status_code} - {r.text}")
-    data = r.json()
-    cand = data['candidates'][0]
-    finish = cand.get('finishReason', '')
-    text = cand['content']['parts'][0]['text']
-    if finish and finish not in ('STOP', 'MAX_TOKENS'):
-        print(f"⚠️  Gemini finishReason: {finish}")
-    elif finish == 'MAX_TOKENS':
-        print(f"⚠️  Gemini hit MAX_TOKENS — output may be truncated.")
-    return text
+        print(f"⚠️  Grounded call HTTP {r.status_code}: {r.text[:400]}")
+        # Tool-not-found etc. → retry without grounding
+        r = None
+
+    if r is not None:
+        try:
+            return _extract_text(r.json())
+        except Exception as e:
+            print(f"⚠️  Grounded call returned no usable text: {e}")
+            print("   Retrying without search grounding...")
+
+    # Attempt 2: without grounding (model writes from training, but we still get HTML out)
+    r = _post(url, base_payload)
+    if r.status_code != 200:
+        raise Exception(f"Google API Error: {r.status_code} - {r.text}")
+    return _extract_text(r.json())
 
 
 def extract_inner(model_output):
