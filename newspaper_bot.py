@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import datetime
 import requests
 
@@ -226,37 +227,61 @@ def _extract_text(data):
     return text
 
 
-def _post(url, payload, timeout=240):
-    return requests.post(url, headers={'Content-Type': 'application/json'}, json=payload, timeout=timeout)
+TRANSIENT_HTTP = {429, 500, 502, 503, 504}
+
+
+def _post_with_retry(url, payload, attempts=5, base_delay=20):
+    """POST with exponential backoff on transient errors (rate limits, 503, etc.)."""
+    last = None
+    for i in range(attempts):
+        last = requests.post(url, headers={'Content-Type': 'application/json'}, json=payload, timeout=240)
+        if last.status_code == 200:
+            return last
+        if last.status_code not in TRANSIENT_HTTP:
+            return last  # permanent error — don't waste retries
+        if i < attempts - 1:
+            delay = base_delay * (2 ** i)  # 20s, 40s, 80s, 160s
+            print(f"   HTTP {last.status_code}, retrying in {delay}s ({i + 1}/{attempts})...")
+            time.sleep(delay)
+    return last
 
 
 def generate(prompt):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={GEMINI_KEY}"
     base_payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"maxOutputTokens": 60000, "temperature": 0.7}
     }
+    # Try in this order: preferred model grounded → preferred ungrounded → fallback model ungrounded.
+    # Each step gets its own retry loop with exponential backoff.
+    fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
+    attempts = [
+        (MODEL, True),
+        (MODEL, False),
+        (fallback_model, False),
+    ]
 
-    # Attempt 1: with Google Search grounding (real news)
-    payload = dict(base_payload, tools=[{"google_search": {}}])
-    r = _post(url, payload)
-    if r.status_code != 200:
-        print(f"⚠️  Grounded call HTTP {r.status_code}: {r.text[:400]}")
-        # Tool-not-found etc. → retry without grounding
-        r = None
+    last_error = "(no attempt made)"
+    for model, grounded in attempts:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_KEY}"
+        payload = dict(base_payload)
+        if grounded:
+            payload["tools"] = [{"google_search": {}}]
+        label = f"{model}{' + grounding' if grounded else ''}"
+        print(f"   → Trying {label}...")
 
-    if r is not None:
+        r = _post_with_retry(url, payload)
+        if r.status_code != 200:
+            last_error = f"HTTP {r.status_code}: {r.text[:300]}"
+            print(f"   ✗ {label}: {last_error}")
+            continue
         try:
             return _extract_text(r.json())
         except Exception as e:
-            print(f"⚠️  Grounded call returned no usable text: {e}")
-            print("   Retrying without search grounding...")
+            last_error = str(e)
+            print(f"   ✗ {label}: {last_error}")
+            continue
 
-    # Attempt 2: without grounding (model writes from training, but we still get HTML out)
-    r = _post(url, base_payload)
-    if r.status_code != 200:
-        raise Exception(f"Google API Error: {r.status_code} - {r.text}")
-    return _extract_text(r.json())
+    raise Exception(f"All Gemini attempts exhausted. Last error: {last_error}")
 
 
 def extract_inner(model_output):
