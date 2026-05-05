@@ -251,13 +251,14 @@ def generate(prompt):
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"maxOutputTokens": 60000, "temperature": 0.7}
     }
-    # Try in this order: preferred model grounded → preferred ungrounded → fallback model ungrounded.
+    # Try in this order. Less popular models last — they're rarely overloaded.
     # Each step gets its own retry loop with exponential backoff.
-    fallback_model = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-2.5-pro")
     attempts = [
-        (MODEL, True),
-        (MODEL, False),
-        (fallback_model, False),
+        (MODEL, True),                  # preferred model with grounding (best content)
+        (MODEL, False),                 # preferred model alone
+        ("gemini-2.5-flash-lite", False),   # cheaper sibling, much less crowded
+        ("gemini-2.0-flash", False),    # older generation, even less crowded
+        ("gemini-2.5-pro", False),      # last resort — usually quota-limited on free tier
     ]
 
     last_error = "(no attempt made)"
