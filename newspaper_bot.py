@@ -1,7 +1,9 @@
 import os
+import re
 import sys
 import time
 import datetime
+import html as htmllib
 import requests
 
 # --- 1. AUTH & CONFIG ---
@@ -132,6 +134,136 @@ HTML_TAIL = """
 </html>"""
 
 
+# --- 4b. REAL NEWS FETCHERS (RSS + Telegram public channels) ---
+# These give the model verified ground truth instead of forcing it to rely on
+# Gemini's flaky search grounding for Iran news.
+
+UA_HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; KusadasiHeraldBot/1.0)'}
+
+
+def _clean(s):
+    """Strip HTML tags + decode entities, normalize whitespace."""
+    s = re.sub(r'<!\[CDATA\[(.*?)\]\]>', r'\1', s, flags=re.DOTALL)
+    s = re.sub(r'<[^>]+>', ' ', s)
+    s = htmllib.unescape(s)
+    return re.sub(r'\s+', ' ', s).strip()
+
+
+def fetch_rss(url, source_name, max_items=6):
+    """Pull headlines from an RSS feed. Returns list of {title, link, pub, summary}."""
+    try:
+        r = requests.get(url, headers=UA_HEADERS, timeout=20)
+        if r.status_code != 200:
+            print(f"   RSS ✗ {source_name}: HTTP {r.status_code}")
+            return []
+        items = re.findall(r'<item[^>]*>(.*?)</item>', r.text, re.DOTALL)[:max_items]
+        out = []
+        for item in items:
+            def extract(pattern):
+                m = re.search(pattern, item, re.DOTALL | re.IGNORECASE)
+                return _clean(m.group(1)) if m else ''
+            title = extract(r'<title[^>]*>(.*?)</title>')
+            link = extract(r'<link[^>]*>(.*?)</link>')
+            pub = extract(r'<pubDate[^>]*>(.*?)</pubDate>')
+            desc = extract(r'<description[^>]*>(.*?)</description>')[:280]
+            if title:
+                out.append({'title': title, 'link': link, 'pub': pub, 'summary': desc})
+        print(f"   RSS ✓ {source_name}: {len(out)} items")
+        return out
+    except Exception as e:
+        print(f"   RSS ✗ {source_name}: {e}")
+        return []
+
+
+def fetch_telegram_public(username, max_msgs=6):
+    """Scrape recent messages from a public Telegram channel via the t.me/s/ web preview.
+    No auth required — works for any public channel."""
+    url = f"https://t.me/s/{username}"
+    try:
+        r = requests.get(url, headers=UA_HEADERS, timeout=20)
+        if r.status_code != 200:
+            print(f"   TG  ✗ @{username}: HTTP {r.status_code}")
+            return []
+        # Each message text block lives in a div with class tgme_widget_message_text
+        msg_blocks = re.findall(
+            r'<div class="tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>',
+            r.text, re.DOTALL
+        )
+        # Dates are in <time datetime="..."> tags, one per message
+        dates = re.findall(r'<time[^>]*datetime="([^"]+)"', r.text)
+        out = []
+        for i, block in enumerate(msg_blocks[-max_msgs:]):
+            text = _clean(block)
+            if not text:
+                continue
+            # Match date by position from the end
+            idx_from_end = len(msg_blocks) - (len(msg_blocks) - max_msgs + i if len(msg_blocks) > max_msgs else i) - 1
+            date = dates[-(idx_from_end + 1)] if idx_from_end < len(dates) else ''
+            out.append({'text': text[:280], 'date': date})
+        out.reverse()  # newest first
+        print(f"   TG  ✓ @{username}: {len(out)} messages")
+        return out
+    except Exception as e:
+        print(f"   TG  ✗ @{username}: {e}")
+        return []
+
+
+def build_news_context():
+    """Fetch real Iran-news headlines from RSS + Telegram. Returns a Persian-language
+    block to inject into the prompt."""
+    print("📰 Fetching real news feeds...")
+    parts = []
+
+    # RSS feeds — websites that publish proper feeds
+    rss_sources = [
+        ('BBC Persian',       'https://feeds.bbci.co.uk/persian/rss.xml'),
+        ('Euronews Persian',  'https://parsi.euronews.com/rss'),
+    ]
+    for name, url in rss_sources:
+        items = fetch_rss(url, name, max_items=5)
+        if items:
+            parts.append(f"\n──── منبع: {name} (RSS امروز) ────")
+            for it in items:
+                line = f"• «{it['title']}»"
+                if it['pub']:
+                    line += f"  [{it['pub']}]"
+                if it['link']:
+                    line += f"\n  🔗 {it['link']}"
+                if it['summary']:
+                    line += f"\n  📝 {it['summary']}"
+                parts.append(line)
+
+    # Telegram public channels — for outlets without good RSS, or to capture
+    # different ideological angles. User-specified: bbcpersian (Western/foreign),
+    # mypersia24 (Iran-government-leaning), euronewspe (European moderate).
+    tg_channels = [
+        ('bbcpersian',  'BBC Persian (Telegram)'),
+        ('euronewspe',  'Euronews Persian (Telegram)'),
+        ('mypersia24',  'MyPersia24 — Iran-leaning (Telegram)'),
+    ]
+    for handle, label in tg_channels:
+        msgs = fetch_telegram_public(handle, max_msgs=5)
+        if msgs:
+            parts.append(f"\n──── منبع: {label} — @{handle} ────")
+            for m in msgs:
+                line = f"• {m['text']}"
+                if m['date']:
+                    line += f"  [{m['date']}]"
+                line += f"\n  🔗 https://t.me/{handle}"
+                parts.append(line)
+
+    if not parts:
+        return "(فید زنده امروز قابل دسترسی نیست — از Google Search استفاده کنید و قوانین ضد-ساختن خبر را رعایت کنید.)"
+
+    headline_count = sum(1 for p in parts if p.startswith('•'))
+    source_count = sum(1 for p in parts if 'منبع:' in p)
+    print(f"📰 News context built: {headline_count} headlines across {source_count} sources")
+    return '\n'.join(parts)
+
+
+NEWS_CONTEXT = build_news_context()
+
+
 # --- 5. PROMPT (asks for inner content only — saves ~5K tokens of CSS regurgitation) ---
 PROMPT = f"""شما سردبیر ارشد روزنامه «کوشاداسی هرالد سان» — روزنامه فارسی‌زبان روزانه برای جامعه فارسی‌زبان در کوشاداسی (سواحل اژه ترکیه) و خارج.
 
@@ -156,6 +288,22 @@ PROMPT = f"""شما سردبیر ارشد روزنامه «کوشاداسی هر
 • ایران در سال ۲۰۲۶ در شرایط جنگی/درگیری است. **لیگ برتر فوتبال ایران ممکن است معلق باشد.** قبل از نوشتن از بازی، وضعیت لیگ را در جستجو تأیید کنید. نتایج تخیلی ساختن ممنوع است.
 • ترامپ رئیس‌جمهور آمریکا است.
 • ملونی نخست‌وزیر ایتالیا است (مگر تغییر را در جستجو ببینید).
+
+══════════════════════════════════════════════════════════════
+== ⭐ اخبار واقعی و تأیید شده امروز از فیدهای زنده ⭐ ==
+══════════════════════════════════════════════════════════════
+
+این تیترها و متن‌ها همین لحظه از RSS و کانال‌های تلگرام BBC Persian, Euronews فارسی, Radio Farda, VOA Persian, MyPersia24 پایین آمده‌اند. **این محتوا واقعی، تأیید شده، و امروزی است.**
+
+برای بخش «گزارش جهانی · ایران» (بخش ۳):
+✓ **حتماً** ۲ تا ۳ تیتر از این فهرست انتخاب کنید — ترجیحاً از منابع متنوع برای تعادل دیدگاه (یک از BBC/Euronews غربی، یک از MyPersia24 داخلی-گرا اگر موجود است).
+✓ هر مقاله را با گسترش معنای تیتر و خلاصه بسازید — بدون اضافه کردن نقل قول جدید.
+✓ در byline-row حتماً منبع واقعی و URL واقعی را بنویسید (همان که در فهرست زیر آمده).
+✓ blockquote فقط در صورتی استفاده کنید که نقل قول مستقیم در خلاصه RSS موجود باشد.
+
+برای بخش‌های دیگر (سوکه، کوشاداسی، رم، بارسلونا، ورزش‌ها) اگر تیتر مرتبط در این فهرست هست از آن استفاده کنید، در غیر این صورت از Google Search کمک بگیرید — اما **قوانین ضد-ساختن خبر را رعایت کنید**.
+
+{NEWS_CONTEXT}
 
 ══════════════════════════════════════════════════════════════
 == الزام منبع: هر مقاله باید منبع واقعی داشته باشد ==
