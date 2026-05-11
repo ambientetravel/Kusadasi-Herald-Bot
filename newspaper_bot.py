@@ -149,13 +149,15 @@ def _clean(s):
     return re.sub(r'\s+', ' ', s).strip()
 
 
-def fetch_rss(url, source_name, max_items=6):
+def fetch_rss(url, source_name, max_items=6, encoding=None):
     """Pull headlines from an RSS feed. Returns list of {title, link, pub, summary}."""
     try:
         r = requests.get(url, headers=UA_HEADERS, timeout=20)
         if r.status_code != 200:
             print(f"   RSS ✗ {source_name}: HTTP {r.status_code}")
             return []
+        if encoding:
+            r.encoding = encoding  # some Persian feeds need explicit utf-8
         items = re.findall(r'<item[^>]*>(.*?)</item>', r.text, re.DOTALL)[:max_items]
         out = []
         for item in items:
@@ -208,8 +210,49 @@ def fetch_telegram_public(username, max_msgs=6):
         return []
 
 
+def fetch_varzesh3_worldcup_and_national(max_items=8):
+    """Pull Varzesh3 RSS and filter for World Cup / Iran national team / FIFA items.
+    Iran's domestic Persian Gulf Pro League may be suspended in 2026, so World Cup
+    and national-team coverage is the active sports content."""
+    try:
+        r = requests.get('https://www.varzesh3.com/rss/all', headers=UA_HEADERS, timeout=20)
+        if r.status_code != 200:
+            print(f"   V3  ✗ Varzesh3: HTTP {r.status_code}")
+            return []
+        r.encoding = 'utf-8'  # Varzesh3 RSS needs explicit decoding
+        items = re.findall(r'<item[^>]*>(.*?)</item>', r.text, re.DOTALL)
+        # Keywords that indicate World Cup or Iran national team content
+        wc_keywords = [
+            'جام جهانی', '۲۰۲۶', '2026', 'فیفا', 'FIFA',
+            'تیم ملی', 'فدراسیون فوتبال', 'قلعه‌نویی', 'قلعه نویی',
+            'طارمی', 'آزمون', 'جهانبخش', 'مهدی طارمی',
+            'مقدماتی', 'یورو', 'world cup',
+        ]
+        out = []
+        for item in items:
+            def extract(pattern):
+                m = re.search(pattern, item, re.DOTALL | re.IGNORECASE)
+                return _clean(m.group(1)) if m else ''
+            title = extract(r'<title[^>]*>(.*?)</title>')
+            if not title:
+                continue
+            if not any(kw in title for kw in wc_keywords):
+                continue
+            link = extract(r'<link[^>]*>(.*?)</link>')
+            pub = extract(r'<pubDate[^>]*>(.*?)</pubDate>')
+            desc = extract(r'<description[^>]*>(.*?)</description>')[:280]
+            out.append({'title': title, 'link': link, 'pub': pub, 'summary': desc})
+            if len(out) >= max_items:
+                break
+        print(f"   V3  ✓ Varzesh3 (WC/national filter): {len(out)} items")
+        return out
+    except Exception as e:
+        print(f"   V3  ✗ Varzesh3: {e}")
+        return []
+
+
 def build_news_context():
-    """Fetch real Iran-news headlines from RSS + Telegram. Returns a Persian-language
+    """Fetch real news headlines from RSS + Telegram. Returns a Persian-language
     block to inject into the prompt."""
     print("📰 Fetching real news feeds...")
     parts = []
@@ -232,6 +275,20 @@ def build_news_context():
                 if it['summary']:
                     line += f"\n  📝 {it['summary']}"
                 parts.append(line)
+
+    # Varzesh3 (sports — World Cup & Iran national team filter)
+    v3_items = fetch_varzesh3_worldcup_and_national(max_items=6)
+    if v3_items:
+        parts.append("\n──── منبع: Varzesh3 (جام جهانی · تیم ملی · امروز) ────")
+        for it in v3_items:
+            line = f"• «{it['title']}»"
+            if it['pub']:
+                line += f"  [{it['pub']}]"
+            if it['link']:
+                line += f"\n  🔗 {it['link']}"
+            if it['summary']:
+                line += f"\n  📝 {it['summary']}"
+            parts.append(line)
 
     # Telegram public channels — for outlets without good RSS, or to capture
     # different ideological angles. User-specified: bbcpersian (Western/foreign),
@@ -269,6 +326,20 @@ PROMPT = f"""شما سردبیر ارشد روزنامه «کوشاداسی هر
 
 تاریخ امروز میلادی: {today_human_en} ({today_str})
 نوبت انتشار: {edition_fa} ({edition_en})
+
+══════════════════════════════════════════════════════════════
+== ⛔ ممنوعیت نشانگرهای داخلی در خروجی ⛔ ==
+══════════════════════════════════════════════════════════════
+
+**هرگز** این نشانگرها را در متن خروجی ننویسید — این‌ها فقط برای استدلال داخلی شما هستند، نه برای خواننده:
+
+❌ `[cite: 19 (from prompt)]`
+❌ `[cite: 8 (from previous search)]`
+❌ `(from prompt)` در هیچ شکلی
+❌ `(from previous search)` در هیچ شکلی
+❌ `[cite: ...]` هر شکل بازوی دیگری
+
+خواننده نباید هیچ بریده‌ای از کد یا نشانگرهای کاری شما را ببیند. اگر می‌خواهید منبع را نشان دهید، فقط در byline-row با فرمت طبیعی: «به نقل از BBC Persian، ۱۱ مه ۲۰۲۶».
 
 ══════════════════════════════════════════════════════════════
 == ⚠️ قانون مطلق: ممنوعیت ساختن خبر ⚠️ ==
@@ -424,15 +495,17 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
 **۳.** section-header red «گزارش جهانی · ایران»
    ۲ تا ۳ <article class="article">. هر مقاله: kicker, h2.lead, h3.deck, byline-row, پاراگراف‌ها (اولی با drop). حداقل یک blockquote با نام منبع. **نام شخص یا تاریخ مشخص الزامی.**
 
-**۴.** section-header gold «ورزش ایران»
-   ۱ تا ۲ مقاله. محتوای قابل قبول (هر یک کافی است):
-   • نتیجه بازی اخیر لیگ برتر یا تیم ملی با امتیاز دقیق و گلزن
-   • پیش‌نمایش بازی آینده با تاریخ، تیم‌ها، استادیوم
-   • تحلیل وضعیت تیم در جدول لیگ با امتیاز و رتبه
-   • خبر نقل و انتقالات با نام بازیکن و تیم مقصد
-   • وضعیت ستاره‌های ایرانی در لیگ‌های خارجی (مهدی طارمی، علیرضا جهانبخش، سردار آزمون و...)
-   • اخبار کشتی، والیبال، وزنه‌برداری با نام ورزشکار و رویداد مشخص
-   جستجوی پیشنهادی: «لیگ برتر ایران ۱۴۰۵» OR «Persian Gulf Pro League» OR «تیم ملی فوتبال ایران» OR «طارمی Inter Milan».
+**۴.** section-header gold «اخبار جام جهانی · ورزش ایران» (World Cup News)
+   ۱ تا ۲ مقاله. **منبع اصلی: تیترهای Varzesh3 از فهرست بالا** (لیگ برتر داخلی ایران ممکن است معلق باشد، پس تمرکز روی جام جهانی ۲۰۲۶ و تیم ملی).
+   محتوای قابل قبول:
+   • اخبار آمادگی تیم ملی فوتبال ایران برای جام جهانی ۲۰۲۶ (آمریکا/کانادا/مکزیک)
+   • گزارش از مسابقات مقدماتی جام جهانی
+   • وضعیت ستاره‌های ایرانی در لیگ‌های خارجی (مهدی طارمی، علیرضا جهانبخش، سردار آزمون)
+   • تحلیل گروه‌بندی و قرعه‌کشی جام جهانی
+   • خبر فدراسیون فوتبال ایران یا فیفا
+   • هر تیتر از Varzesh3 بالا که به جام جهانی، تیم ملی، فیفا، یا بازیکنان ایرانی مربوط است
+   **byline حتماً Varzesh3 + لینک واقعی URL از فهرست بالا.**
+   اگر هیچ تیتر مرتبط از Varzesh3 در فهرست بالا نبود، placeholder بگذارید.
 
 **۵.** section-header «اخبار محلی · کوشاداسی، سوکه، آیدین»
    **دقیقاً ۳ مقاله. محتوای قابل قبول بسیار وسیع است:**
@@ -645,6 +718,15 @@ def extract_inner(model_output):
         s = s.rstrip()
         if s.endswith("</div>"):
             s = s[:-len("</div>")].rstrip()
+    # Strip Gemini citation leaks that pollute the final HTML:
+    # e.g. "[cite: 19 (from prompt), 4 (from prompt)]" or "[cite: 8 (from previous search)]"
+    # The model emits these as internal reasoning markers; they must never reach the reader.
+    s = re.sub(r'\s*\[cite[^\]]*\]', '', s)
+    # Also strip any stray "(from prompt)" / "(from previous search)" parentheticals
+    # that might escape outside of brackets
+    s = re.sub(r'\s*\((?:from prompt|from previous search)[^)]*\)', '', s)
+    # Strip stray "(cite N)" style if any
+    s = re.sub(r'\s*\(cite\s+\d+[^)]*\)', '', s)
     return s.strip()
 
 
