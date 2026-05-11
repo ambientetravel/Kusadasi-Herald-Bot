@@ -577,6 +577,13 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
    div.box: weather-grid (۳ روز کوشاداسی) + city-weather (کوشاداسی، رم، بارسلونا). دما و وضعیت دقیق.
 
 **۱۰.** div.turkish-word — **ترانه ترکی روز** (Turkish Song of the Day):
+
+   ⚠️ **قانون مهم برای لینک Spotify و YouTube:**
+   - **هرگز** از فرمت `https://open.spotify.com/track/<id>` استفاده نکنید — شما نمی‌توانید شناسه‌های واقعی track را بدانید و حدس زدن آن‌ها به لینک مرده منجر می‌شود.
+   - **همیشه** از URL جستجو استفاده کنید که در همه جا (از جمله ترکیه) کار می‌کند:
+     - Spotify: `https://open.spotify.com/search/[ARTIST]%20[TITLE]` (space → %20)
+     - YouTube: `https://www.youtube.com/results?search_query=[ARTIST]+[TITLE]` (space → +)
+
    ساختار دقیق:
    ```
    <div class="turkish-word">
@@ -586,14 +593,21 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
      <div class="turkish-ex">
        <strong>[یک مصرع ترکی]</strong><br>
        [ترجمه فارسی همان مصرع]<br>
-       <a href="[لینک Spotify ترانه]" target="_blank">🎧 شنیدن در Spotify</a>
+       <a href="https://open.spotify.com/search/[ARTIST]%20[TITLE]" target="_blank">🎧 Spotify</a> ·
+       <a href="https://www.youtube.com/results?search_query=[ARTIST]+[TITLE]" target="_blank">▶ YouTube</a>
      </div>
    </div>
    ```
-   - یک ترانه ترکی معروف و کلاسیک یا محبوب امروزی (مثلاً Tarkan, Sezen Aksu, Barış Manço, Müslüm Gürses, Ajda Pekkan, Aleyna Tilki, Mabel Matiz).
+
+   مثال کامل و درست برای ترانه «Dudu» اثر Tarkan:
+   ```
+   <a href="https://open.spotify.com/search/Tarkan%20Dudu" target="_blank">🎧 Spotify</a> ·
+   <a href="https://www.youtube.com/results?search_query=Tarkan+Dudu" target="_blank">▶ YouTube</a>
+   ```
+
+   - یک ترانه ترکی معروف و کلاسیک یا محبوب امروزی (Tarkan, Sezen Aksu, Barış Manço, Müslüm Gürses, Ajda Pekkan, Aleyna Tilki, Mabel Matiz, Tarkan Tevetoğlu, Emre Aydın, Sıla, Ezhel و...).
    - ۱ تا ۲ مصرع کوتاه از متن ترانه به ترکی و ترجمه فارسی.
-   - **لینک واقعی Spotify** برای آن ترانه (در جستجو پیدا کنید — معمولاً `https://open.spotify.com/track/...`).
-   - اگر لینک Spotify دقیق در دسترس نیست، از `https://open.spotify.com/search/[نام%20ترانه%20نام%20خواننده]` استفاده کنید که جستجو را در Spotify باز می‌کند.
+   - **در URLها از فاصله یا کاراکترهای فارسی استفاده نکنید** — فقط نام انگلیسی/ترکی هنرمند و آهنگ. فاصله = `%20` در Spotify، `+` در YouTube.
 
 **۱۱.** div.history-box — ۳ رویداد تاریخی این روز (با history-year پررنگ).
 
@@ -727,6 +741,40 @@ def extract_inner(model_output):
     s = re.sub(r'\s*\((?:from prompt|from previous search)[^)]*\)', '', s)
     # Strip stray "(cite N)" style if any
     s = re.sub(r'\s*\(cite\s+\d+[^)]*\)', '', s)
+    # Fix fabricated Spotify track URLs. Gemini can't actually know real track IDs,
+    # so any `/track/<garbled>` link is a hallucination → dead link in Turkey.
+    # Convert to a Spotify search URL using nearby text from the same .turkish-word block.
+    def _fix_spotify(match):
+        block = match.group(0)
+        # Pull artist (turkish-meaning) and title (turkish-main) out of the block
+        title_m = re.search(r'<div class="turkish-main"[^>]*>([^<]+)</div>', block)
+        artist_m = re.search(r'<div class="turkish-meaning"[^>]*>([^·<]+)', block)
+        title = (title_m.group(1) if title_m else '').strip()
+        artist = (artist_m.group(1) if artist_m else '').strip()
+        if not title:
+            return block  # can't fix without title — leave it
+        query = f"{artist} {title}".strip()
+        spotify_q = query.replace(' ', '%20')
+        youtube_q = query.replace(' ', '+')
+        # Replace any spotify track URL with the search URL
+        block = re.sub(
+            r'https?://open\.spotify\.com/track/[A-Za-z0-9_-]+',
+            f'https://open.spotify.com/search/{spotify_q}',
+            block
+        )
+        # Also fix any youtube watch URL with a search URL
+        block = re.sub(
+            r'https?://(?:www\.)?youtube\.com/watch\?v=[A-Za-z0-9_-]+',
+            f'https://www.youtube.com/results?search_query={youtube_q}',
+            block
+        )
+        return block
+    s = re.sub(
+        r'<div class="turkish-word"[^>]*>.*?</div>\s*</div>',
+        _fix_spotify,
+        s,
+        flags=re.DOTALL
+    )
     return s.strip()
 
 
