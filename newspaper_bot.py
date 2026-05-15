@@ -113,20 +113,159 @@ today_str = now.strftime("%Y-%m-%d")
 today_human_en = now.strftime("%A, %d %B %Y")
 
 
+# --- 3b. MEMORIAL CALENDAR (recurring anniversaries — switch to mourning edition) ---
+# On these dates each year, the newspaper takes a memorial form: muted palette,
+# a banner above the masthead, a Khayyam quatrain, and the loved one's name.
+MEMORIAL_DATES = {
+    # Format: 'MM-DD' → memorial details
+    '05-15': {
+        'name_fa':       'جهانگیر نوریشاد',
+        'name_en':       'Jahangir Nourishad',
+        'death_year':    2025,
+        'death_date_fa': '۱۵ مه ۲۰۲۵',
+        'dedication':    'یادبود',
+        # "May his soul be joyful and his memory cherished" — classic Persian
+        'epitaph':       'روحش شاد و یادش گرامی',
+        # Khayyam quatrain on enjoying life while one lives — the user's brief
+        'poem_lines': [
+            'تا کی غم آن خورم که دارم یا نه',
+            'وین عمر به خوشدلی گذارم یا نه',
+            'پر کن قدح باده که معلومم نیست',
+            'کاین دم که فرو برم برآرم یا نه',
+        ],
+        'poem_translation': (
+            'تا کی غم خوریم از داشتن یا نداشتن؟ '
+            'این عمر را به شادی بگذرانم یا نه؟ '
+            'جام را پر کن — معلوم نیست این نفسی که فرو می‌برم، برآورم یا نه.'
+        ),
+        'poem_author': 'عمر خیام · رباعیات',
+    },
+}
+
+today_md = now.strftime('%m-%d')
+MEMORIAL = MEMORIAL_DATES.get(today_md)
+MEMORIAL_MODE = MEMORIAL is not None
+if MEMORIAL_MODE:
+    years_passed = now.year - MEMORIAL['death_year']
+    print(f"🕯️  Memorial mode: {MEMORIAL['name_fa']} — {years_passed} سال")
+
+
+# --- 3c. MEMORIAL CSS OVERRIDE & BANNER BUILDER ---
+# When MEMORIAL_MODE is on, this CSS overrides the default palette to a muted
+# mourning palette: aged parchment, charcoal ink, deep oxblood/maroon instead
+# of vivid red, sage green, aged gold, dark navy. The body gradient also goes
+# darker. Result: classy, quiet, sad — without being garish.
+MEMORIAL_CSS_OVERRIDE = """<style>
+:root{
+  --paper:#ebe6da !important;
+  --paper-dark:#cfc8b5 !important;
+  --ink:#1c1c20 !important;
+  --ink-soft:#34323a !important;
+  --faded:#665f57 !important;
+  --red:#5c3838 !important;        /* muted oxblood — used as primary accent */
+  --red-dark:#3a2020 !important;
+  --green:#3e4a3c !important;      /* deep sage */
+  --gold:#7a6a4a !important;       /* aged brass */
+  --blue:#2a3645 !important;       /* dark navy */
+}
+body{background:linear-gradient(#23201b,#13110d) !important;}
+.section-header::before,.section-header::after{color:#8a6e4e !important;}
+.memorial-banner{
+  background:linear-gradient(135deg,#1e1e22,#36343a);
+  color:#ebe6da;padding:22px 18px;margin-bottom:18px;
+  text-align:center;border:1px solid #5c3838;border-radius:4px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);
+}
+.memorial-banner .candle{font-size:32px;display:block;margin-bottom:8px;line-height:1;}
+.memorial-banner .dedication{
+  font-size:11px;letter-spacing:3px;color:#c4b8a0;
+  margin-bottom:6px;text-transform:uppercase;font-weight:600;
+}
+.memorial-banner .name{
+  font-family:'Amiri','Vazirmatn',serif;font-size:26px;font-weight:700;
+  margin:8px 0 2px;color:#f0ece0;letter-spacing:-0.5px;
+}
+.memorial-banner .name-en{
+  font-family:'Amiri',serif;font-style:italic;font-size:13px;
+  color:#a89c84;margin-bottom:10px;letter-spacing:1px;
+}
+.memorial-banner .dates{
+  font-size:12px;color:#a89c84;margin-bottom:16px;
+  font-family:'Amiri',serif;font-style:italic;
+  padding-bottom:14px;border-bottom:1px solid rgba(196,184,160,0.25);
+}
+.memorial-banner .poem{
+  font-family:'Amiri','Vazirmatn',serif;font-size:15px;line-height:2.1;
+  font-style:italic;color:#f0ece0;margin:14px 8px 6px;
+}
+.memorial-banner .poem-translation{
+  font-size:11.5px;line-height:1.7;color:#c4b8a0;
+  margin:10px 16px 4px;text-align:justify;font-family:'Vazirmatn',sans-serif;
+}
+.memorial-banner .poem-author{
+  font-size:10.5px;color:#a89c84;margin-top:10px;letter-spacing:1.5px;
+}
+.memorial-banner .epitaph{
+  font-size:12px;color:#d4c8b0;margin-top:14px;padding-top:12px;
+  border-top:1px solid rgba(196,184,160,0.25);
+  font-family:'Amiri',serif;font-style:italic;
+}
+</style>"""
+
+
+_FA_DIGITS = str.maketrans('0123456789', '۰۱۲۳۴۵۶۷۸۹')
+
+
+def _fa_num(n):
+    return str(n).translate(_FA_DIGITS)
+
+
+def build_memorial_banner(m, years_passed):
+    """Builds the memorial banner HTML for today's mourning edition."""
+    poem_html = '<br>\n    '.join(m['poem_lines'])
+    if years_passed <= 0:
+        years_text = 'به یاد'
+    elif years_passed == 1:
+        years_text = 'نخستین سال از درگذشت'
+    else:
+        years_text = f"{_fa_num(years_passed)} سال از درگذشت"
+    return f"""<div class="memorial-banner">
+  <span class="candle">🕯</span>
+  <div class="dedication">{m['dedication']}</div>
+  <div class="name">{m['name_fa']}</div>
+  <div class="name-en">— {m['name_en']} —</div>
+  <div class="dates">{m['death_date_fa']} · {years_text}</div>
+  <div class="poem">
+    {poem_html}
+  </div>
+  <div class="poem-translation">{m['poem_translation']}</div>
+  <div class="poem-author">— {m['poem_author']} —</div>
+  <div class="epitaph">{m['epitaph']}</div>
+</div>
+"""
+
+
+MEMORIAL_BANNER = build_memorial_banner(MEMORIAL, now.year - MEMORIAL['death_year']) if MEMORIAL_MODE else ''
+
+
 # --- 4. HTML SHELL (Python owns this — CSS never goes through the model) ---
+_title_suffix = f" — نسخه یادبود {MEMORIAL['name_fa']}" if MEMORIAL_MODE else ""
+_theme_color = "#5c3838" if MEMORIAL_MODE else "#d92020"
+
 HTML_HEAD = f"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#d92020">
-<title>روزنامه کوشاداسی هرالد سان — {edition_fa} {today_str}</title>
+<meta name="theme-color" content="{_theme_color}">
+<title>روزنامه کوشاداسی هرالد سان — {edition_fa} {today_str}{_title_suffix}</title>
 {HEAD_FONTS}
 {CSS_TEMPLATE}
+{MEMORIAL_CSS_OVERRIDE if MEMORIAL_MODE else ''}
 </head>
 <body>
 <div class="paper">
-"""
+{MEMORIAL_BANNER}"""
 
 HTML_TAIL = """
 </div>
@@ -322,10 +461,30 @@ NEWS_CONTEXT = build_news_context()
 
 
 # --- 5. PROMPT (asks for inner content only — saves ~5K tokens of CSS regurgitation) ---
+_memorial_note = ""
+if MEMORIAL_MODE:
+    _memorial_note = f"""
+══════════════════════════════════════════════════════════════
+== 🕯 نسخه یادبود — توجه ویژه ==
+══════════════════════════════════════════════════════════════
+
+امروز ({today_str}) سالگرد درگذشت **{MEMORIAL['name_fa']}** ({MEMORIAL['name_en']}) است.
+بالای ماست‌هد یک بنر یادبود توسط Python اضافه شده — لازم نیست شما آن را تولید کنید.
+
+نکات نسخه یادبود:
+• بنر یادبود را تولید **نکنید** — Python خودش آن را اضافه می‌کند.
+• محتوای روزنامه را به طور معمول بنویسید (همان بخش‌های همیشگی).
+• فقط در «پیام پایانی» (closing-text) لحن گرم‌تر، کمی فلسفی، و یادآور ارزش لحظه باشد. به طور صریح به مرحوم اشاره نکنید — اما حالی شاعرانه و آرام داشته باشید.
+• اگر در «در چنین روزی» یک رویداد تاریخی فلسفی یا یادآور زندگی هست، آن را اولویت دهید.
+
+══════════════════════════════════════════════════════════════
+"""
+
 PROMPT = f"""شما سردبیر ارشد روزنامه «کوشاداسی هرالد سان» — روزنامه فارسی‌زبان روزانه برای جامعه فارسی‌زبان در کوشاداسی (سواحل اژه ترکیه) و خارج.
 
 تاریخ امروز میلادی: {today_human_en} ({today_str})
 نوبت انتشار: {edition_fa} ({edition_en})
+{_memorial_note}
 
 ══════════════════════════════════════════════════════════════
 == ⛔ ممنوعیت نشانگرهای داخلی در خروجی ⛔ ==
