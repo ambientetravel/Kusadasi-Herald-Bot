@@ -121,6 +121,9 @@ MEMORIAL_DATES = {
     '05-15': {
         'name_fa':       'جهانگیر نوریشاد',
         'name_en':       'Jahangir Nourishad',
+        # Poetic descriptor — appears under the name in italic Amiri.
+        # "Son of the Land of Iran" — honoring his Iranian heritage.
+        'title_fa':      'فرزند ایران زمین',
         'death_year':    2025,
         'death_date_fa': '۱۵ مه ۲۰۲۵',
         'dedication':    'یادبود',
@@ -187,7 +190,15 @@ body{background:linear-gradient(#23201b,#13110d) !important;}
 }
 .memorial-banner .name-en{
   font-family:'Amiri',serif;font-style:italic;font-size:13px;
-  color:#a89c84;margin-bottom:10px;letter-spacing:1px;
+  color:#a89c84;margin-bottom:8px;letter-spacing:1px;
+}
+.memorial-banner .title{
+  font-family:'Amiri','Vazirmatn',serif;font-style:italic;
+  font-size:15px;color:#d4c8b0;margin:4px 0 12px;
+  letter-spacing:0.5px;
+}
+.memorial-banner .title::before,.memorial-banner .title::after{
+  content:"✦";color:#8a6e4e;margin:0 8px;font-style:normal;font-size:10px;
 }
 .memorial-banner .dates{
   font-size:12px;color:#a89c84;margin-bottom:16px;
@@ -229,12 +240,13 @@ def build_memorial_banner(m, years_passed):
         years_text = 'نخستین سال از درگذشت'
     else:
         years_text = f"{_fa_num(years_passed)} سال از درگذشت"
+    title_html = f'  <div class="title">{m["title_fa"]}</div>\n' if m.get('title_fa') else ''
     return f"""<div class="memorial-banner">
   <span class="candle">🕯</span>
   <div class="dedication">{m['dedication']}</div>
   <div class="name">{m['name_fa']}</div>
   <div class="name-en">— {m['name_en']} —</div>
-  <div class="dates">{m['death_date_fa']} · {years_text}</div>
+{title_html}  <div class="dates">{m['death_date_fa']} · {years_text}</div>
   <div class="poem">
     {poem_html}
   </div>
