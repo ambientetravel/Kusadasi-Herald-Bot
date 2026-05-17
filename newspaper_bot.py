@@ -153,6 +153,44 @@ if MEMORIAL_MODE:
     print(f"🕯️  Memorial mode: {MEMORIAL['name_fa']} — {years_passed} سال")
 
 
+# --- 3d. RECIPE ROTATION (14-day cycle — kills the Mercimek-Çorbası-every-day rut) ---
+# The model with no memory keeps defaulting to red-lentil soup. Pre-pick today's
+# recipe in Python from a curated list, force the prompt to use it verbatim.
+# Day-of-year modulo gives a stable 2-week rotation that's predictable.
+RECIPE_ROTATION = [
+    {'name_fa': 'قورمه‌سبزی', 'name_other': 'Ghormeh Sabzi · ایرانی کلاسیک',
+     'hint': 'خورش سنتی ایرانی با سبزی معطر (تره، جعفری، شنبلیله)، لوبیا قرمز، گوشت گوسفند یا گوساله، لیمو عمانی.'},
+    {'name_fa': 'ایمام بایلدی', 'name_other': 'İmam Bayıldı · ترکی کلاسیک',
+     'hint': 'بادمجان شکم‌پر ترکی با گوجه، پیاز، سیر، روغن زیتون فراوان. به صورت سرد یا گرم سرو می‌شود.'},
+    {'name_fa': 'ریزوتو زعفرانی', 'name_other': 'Risotto allo Zafferano · ایتالیایی میلانی',
+     'hint': 'برنج آربوریو کرمی با کره، پیاز، شراب سفید، آب‌گوشت، پارمسان، و زعفران واقعی.'},
+    {'name_fa': 'میرزا قاسمی', 'name_other': 'Mirza Ghassemi · گیلانی شمالی',
+     'hint': 'بادمجان کبابی دودی با سیر فراوان، گوجه، تخم‌مرغ، زردچوبه. مزه دودی الکی نه — کاملاً روی شعله کبابی.'},
+    {'name_fa': 'منمن', 'name_other': 'Menemen · صبحانه ترکی',
+     'hint': 'تخم‌مرغ هم‌زده با گوجه‌فرنگی پخته، فلفل سبز، پیاز، روغن زیتون. به‌صورت سرپایی با نان تازه.'},
+    {'name_fa': 'فسنجان با مرغ', 'name_other': 'Fesenjan · مجلسی ایرانی',
+     'hint': 'خورش گردوی سابیده با رب انار غلیظ و مرغ. ترش‌و‌شیرین، تیره‌رنگ، با برنج زعفرانی.'},
+    {'name_fa': 'سالاد شیرازی', 'name_other': 'Salad Shirazi · ساده ایرانی',
+     'hint': 'خیار، گوجه، پیاز ریز نگینی، آبلیمو، نعناع تازه. خنک، تابستانی، در کنار هر غذا.'},
+    {'name_fa': 'پاستا آلیو-اولیو', 'name_other': 'Pasta Aglio e Olio · ایتالیایی ناپلی',
+     'hint': 'اسپاگتی با سیر، روغن زیتون، فلفل قرمز خرد، جعفری. ۱۵ دقیقه از شروع تا سرو.'},
+    {'name_fa': 'کشک بادمجان', 'name_other': 'Kashk-e Bademjan · پیش‌غذای ایرانی',
+     'hint': 'بادمجان سرخ‌شده با کشک، پیاز داغ، سیر داغ، نعناع داغ، گردو خرد. به‌صورت گرم با نان لواش.'},
+    {'name_fa': 'زرشک‌پلو با مرغ', 'name_other': 'Zereshk Polo · مجلسی ایرانی',
+     'hint': 'پلوی زرشک با کره و زعفران، همراه ران یا سینه مرغ پخته با پیاز و رب گوجه.'},
+    {'name_fa': 'شکشوکا', 'name_other': 'Shakshuka · شامی شمال آفریقا',
+     'hint': 'تخم‌مرغ نیم‌رو در سس گوجه‌فرنگی ادویه‌دار با فلفل دلمه، زیره، پاپریکا. در همان تابه سرو می‌شود.'},
+    {'name_fa': 'مانتی', 'name_other': 'Mantı · دامپلینگ ترکی',
+     'hint': 'دامپلینگ‌های ریز با گوشت چرخ‌کرده، آب‌پز، سرو با ماست سیردار و کره داغ با پاپریکا و نعناع.'},
+    {'name_fa': 'استانبولی پلو', 'name_other': 'Estamboli Polo · خانگی ایرانی',
+     'hint': 'پلوی گوجه با گوشت چرخ‌کرده، سیب‌زمینی، رب گوجه. کاملاً خانگی، یک‌قابلمه‌ای.'},
+    {'name_fa': 'پاستا پستو', 'name_other': 'Pasta al Pesto · ایتالیایی لیگوریایی',
+     'hint': 'پاستا با سس پستو خانگی (ریحان تازه، پارمسان، پکورینو، پاین‌نات، روغن زیتون، سیر).'},
+]
+todays_recipe = RECIPE_ROTATION[now.timetuple().tm_yday % len(RECIPE_ROTATION)]
+print(f"🍽  Recipe today: {todays_recipe['name_fa']} ({todays_recipe['name_other']})")
+
+
 # --- 3c. MEMORIAL CSS OVERRIDE & BANNER BUILDER ---
 # When MEMORIAL_MODE is on, this CSS overrides the default palette to a muted
 # mourning palette: aged parchment, charcoal ink, deep oxblood/maroon instead
@@ -785,9 +823,18 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
 **۱۲.** div.health-tip — مناسب سن ۷۰+، مرتبط با هوای امروز یا فصل.
 
 **۱۳.** section-header green «آشپزی · دستور روز»
-   div.recipe-box با عنوان، اجزا، طرز تهیه، یک یادداشت سلامتی کوتاه.
+   **دستور امروز:** {todays_recipe['name_fa']} ({todays_recipe['name_other']})
+   **راهنما / شرح کلی:** {todays_recipe['hint']}
 
-**۱۴.** div.migros-box — مواد لازم همان دستور با قیمت‌های روز.
+   شما **حتماً** همین دستور را بنویسید — تنوع روزانه یک ارزش جدی این روزنامه است.
+   • recipe-title: نام فارسی دستور
+   • recipe-heading «📌 اجزا»: فهرست دقیق مواد لازم برای ۴ نفر
+   • recipe-heading «🧑‍🍳 طرز تهیه»: مراحل شماره‌گذاری شده (۶ تا ۸ مرحله)
+   • recipe-heading «💚 یادداشت سلامتی»: یک پاراگراف کوتاه درباره ارزش غذایی برای سن ۷۰+
+
+   ⛔ **اکیداً ممنوع:** سوپ عدس قرمز (Mercimek Çorbası / مرسیمک چوربا‌سی) — این دستور به حد کافی پخته شده و خوانندگان از تکرار آن خسته شده‌اند. هرگز نوشته نشود.
+
+**۱۴.** div.migros-box — مواد لازم **همان دستور بالا ({todays_recipe['name_fa']})** با قیمت‌های روز.
    **دقت قیمت:** قیمت‌های واقعی فعلی در سوپرمارکت میگروس ترکیه (مه ۲۰۲۶). اگر قیمت دقیق در دسترس نیست، در پایان جعبه (داخل migros-total یا قبل از آن) عبارت «قیمت‌ها تقریبی — لطفاً در فروشگاه تأیید کنید» را اضافه کنید.
 
 **۱۵.** div.closing — پیام پایانی گرم.
