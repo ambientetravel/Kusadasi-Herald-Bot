@@ -399,24 +399,17 @@ def fetch_telegram_public(username, max_msgs=6):
         return []
 
 
-def fetch_varzesh3_worldcup_and_national(max_items=8):
-    """Pull Varzesh3 RSS and filter for World Cup / Iran national team / FIFA items.
-    Iran's domestic Persian Gulf Pro League may be suspended in 2026, so World Cup
-    and national-team coverage is the active sports content."""
+def fetch_khabarvarzeshi(max_items=6):
+    """Pull khabarvarzeshi.com RSS — replaces Varzesh3 which has been frozen
+    at 2025-08-25 since at least May 2026. This feed is live and updates
+    several times per day with Persian sports news (Iranian + global)."""
     try:
-        r = requests.get('https://www.varzesh3.com/rss/all', headers=UA_HEADERS, timeout=20)
+        r = requests.get('https://khabarvarzeshi.com/rss', headers=UA_HEADERS, timeout=20)
         if r.status_code != 200:
-            print(f"   V3  ✗ Varzesh3: HTTP {r.status_code}")
+            print(f"   KV  ✗ khabarvarzeshi: HTTP {r.status_code}")
             return []
-        r.encoding = 'utf-8'  # Varzesh3 RSS needs explicit decoding
-        items = re.findall(r'<item[^>]*>(.*?)</item>', r.text, re.DOTALL)
-        # Keywords that indicate World Cup or Iran national team content
-        wc_keywords = [
-            'جام جهانی', '۲۰۲۶', '2026', 'فیفا', 'FIFA',
-            'تیم ملی', 'فدراسیون فوتبال', 'قلعه‌نویی', 'قلعه نویی',
-            'طارمی', 'آزمون', 'جهانبخش', 'مهدی طارمی',
-            'مقدماتی', 'یورو', 'world cup',
-        ]
+        r.encoding = 'utf-8'
+        items = re.findall(r'<item[^>]*>(.*?)</item>', r.text, re.DOTALL)[:max_items]
         out = []
         for item in items:
             def extract(pattern):
@@ -425,18 +418,76 @@ def fetch_varzesh3_worldcup_and_national(max_items=8):
             title = extract(r'<title[^>]*>(.*?)</title>')
             if not title:
                 continue
-            if not any(kw in title for kw in wc_keywords):
-                continue
-            link = extract(r'<link[^>]*>(.*?)</link>')
-            pub = extract(r'<pubDate[^>]*>(.*?)</pubDate>')
-            desc = extract(r'<description[^>]*>(.*?)</description>')[:280]
-            out.append({'title': title, 'link': link, 'pub': pub, 'summary': desc})
-            if len(out) >= max_items:
-                break
-        print(f"   V3  ✓ Varzesh3 (WC/national filter): {len(out)} items")
+            out.append({
+                'title': title,
+                'link': extract(r'<link[^>]*>(.*?)</link>'),
+                'pub': extract(r'<pubDate[^>]*>(.*?)</pubDate>'),
+                'summary': extract(r'<description[^>]*>(.*?)</description>')[:280],
+            })
+        print(f"   KV  ✓ khabarvarzeshi: {len(out)} items")
         return out
     except Exception as e:
-        print(f"   V3  ✗ Varzesh3: {e}")
+        print(f"   KV  ✗ khabarvarzeshi: {e}")
+        return []
+
+
+def fetch_iranwire(max_items=8, sports_only=False):
+    """Pull IranWire RSS. Two unusual quirks of this feed:
+    1. Items are ordered OLDEST-FIRST (most feeds go newest-first), so we
+       reverse before slicing.
+    2. It returns ~700 items, so reversing+slicing is critical for freshness."""
+    try:
+        r = requests.get('https://iranwire.com/fa/feed', headers=UA_HEADERS, timeout=25)
+        if r.status_code != 200:
+            print(f"   IW  ✗ IranWire: HTTP {r.status_code}")
+            return []
+        r.encoding = 'utf-8'
+        items = re.findall(r'<item[^>]*>(.*?)</item>', r.text, re.DOTALL)
+        items.reverse()  # IranWire ships oldest→newest; flip it
+
+        # Sports filter: positive keywords + maritime-context exclusion list to
+        # avoid matching "کشتی" when it means "ship" (Hormuz traffic news).
+        SPORTS_POS = [
+            'استقلال ', 'پرسپولیس', 'سپاهان', 'تراکتور', 'فوتبال',
+            'تیم ملی', 'فدراسیون فوتبال', 'فیفا', 'یوفا', 'جام جهانی',
+            'لیگ برتر', 'لالیگا', 'سوپرلیگ', 'پریمیرلیگ', 'سری آ',
+            'بازیکن', 'گلزن', 'مربی', 'کاپیتان', 'ورزشگاه', 'استادیوم',
+            'کشتی فرنگی', 'کشتی آزاد', 'والیبال', 'بسکتبال', 'وزنه‌برداری',
+            'تکواندو', 'کاراته', 'دو میدانی', 'شنا قهرمانی',
+            'طارمی', 'آزمون', 'جهانبخش', 'دایی', 'علی پروین',
+            'نقل و انتقالات', 'مسابقه قهرمانی', 'بازی دوستانه',
+        ]
+        SPORTS_NEG = [  # maritime / military false positives for "کشتی"
+            'تنگه هرمز', 'سپاه پاسداران', 'بندرعباس', 'توقیف کشتی',
+            'کشتی تجاری', 'کشتی نفتکش', 'کشتی توقیف', 'حمله به کشتی',
+        ]
+
+        out = []
+        for item in items:
+            def extract(pattern):
+                m = re.search(pattern, item, re.DOTALL | re.IGNORECASE)
+                return _clean(m.group(1)) if m else ''
+            title = extract(r'<title[^>]*>(.*?)</title>')
+            if not title:
+                continue
+            if sports_only:
+                if not any(kw in title for kw in SPORTS_POS):
+                    continue
+                if any(kw in title for kw in SPORTS_NEG):
+                    continue
+            out.append({
+                'title': title,
+                'link': extract(r'<link[^>]*>(.*?)</link>'),
+                'pub': extract(r'<pubDate[^>]*>(.*?)</pubDate>'),
+                'summary': extract(r'<description[^>]*>(.*?)</description>')[:280],
+            })
+            if len(out) >= max_items:
+                break
+        label = "sports" if sports_only else "general"
+        print(f"   IW  ✓ IranWire ({label}): {len(out)} items")
+        return out
+    except Exception as e:
+        print(f"   IW  ✗ IranWire: {e}")
         return []
 
 
@@ -465,11 +516,39 @@ def build_news_context():
                     line += f"\n  📝 {it['summary']}"
                 parts.append(line)
 
-    # Varzesh3 (sports — World Cup & Iran national team filter)
-    v3_items = fetch_varzesh3_worldcup_and_national(max_items=6)
-    if v3_items:
-        parts.append("\n──── منبع: Varzesh3 (جام جهانی · تیم ملی · امروز) ────")
-        for it in v3_items:
+    # IranWire — general news, newest first
+    iw_general = fetch_iranwire(max_items=6, sports_only=False)
+    if iw_general:
+        parts.append("\n──── منبع: IranWire (تازه‌ترین — عمومی) ────")
+        for it in iw_general:
+            line = f"• «{it['title']}»"
+            if it['pub']:
+                line += f"  [{it['pub']}]"
+            if it['link']:
+                line += f"\n  🔗 {it['link']}"
+            if it['summary']:
+                line += f"\n  📝 {it['summary']}"
+            parts.append(line)
+
+    # IranWire — sports filter (replaces dead Varzesh3 partially)
+    iw_sports = fetch_iranwire(max_items=4, sports_only=True)
+    if iw_sports:
+        parts.append("\n──── منبع: IranWire (ورزش) ────")
+        for it in iw_sports:
+            line = f"• «{it['title']}»"
+            if it['pub']:
+                line += f"  [{it['pub']}]"
+            if it['link']:
+                line += f"\n  🔗 {it['link']}"
+            if it['summary']:
+                line += f"\n  📝 {it['summary']}"
+            parts.append(line)
+
+    # khabarvarzeshi — live Persian sports feed (Varzesh3 is dead, frozen 2025-08-25)
+    kv_items = fetch_khabarvarzeshi(max_items=6)
+    if kv_items:
+        parts.append("\n──── منبع: khabarvarzeshi (ورزش امروز · ایران و جهان) ────")
+        for it in kv_items:
             line = f"• «{it['title']}»"
             if it['pub']:
                 line += f"  [{it['pub']}]"
@@ -704,17 +783,19 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
 **۳.** section-header red «گزارش جهانی · ایران»
    ۲ تا ۳ <article class="article">. هر مقاله: kicker, h2.lead, h3.deck, byline-row, پاراگراف‌ها (اولی با drop). حداقل یک blockquote با نام منبع. **نام شخص یا تاریخ مشخص الزامی.**
 
-**۴.** section-header gold «اخبار جام جهانی · ورزش ایران» (World Cup News)
-   ۱ تا ۲ مقاله. **منبع اصلی: تیترهای Varzesh3 از فهرست بالا** (لیگ برتر داخلی ایران ممکن است معلق باشد، پس تمرکز روی جام جهانی ۲۰۲۶ و تیم ملی).
-   محتوای قابل قبول:
-   • اخبار آمادگی تیم ملی فوتبال ایران برای جام جهانی ۲۰۲۶ (آمریکا/کانادا/مکزیک)
-   • گزارش از مسابقات مقدماتی جام جهانی
-   • وضعیت ستاره‌های ایرانی در لیگ‌های خارجی (مهدی طارمی، علیرضا جهانبخش، سردار آزمون)
-   • تحلیل گروه‌بندی و قرعه‌کشی جام جهانی
-   • خبر فدراسیون فوتبال ایران یا فیفا
-   • هر تیتر از Varzesh3 بالا که به جام جهانی، تیم ملی، فیفا، یا بازیکنان ایرانی مربوط است
-   **byline حتماً Varzesh3 + لینک واقعی URL از فهرست بالا.**
-   اگر هیچ تیتر مرتبط از Varzesh3 در فهرست بالا نبود، placeholder بگذارید.
+**۴.** section-header gold «ورزش ایران و جهان»
+   ۱ تا ۲ مقاله. **منبع اصلی: تیترهای khabarvarzeshi و IranWire (ورزش) از فهرست بالا.**
+
+   ⛔ **اکیداً ممنوع: استفاده از خبرگزاری Varzesh3.** فید Varzesh3 از مرداد ۱۴۰۴ به‌روزرسانی نشده و اخبار آن کاملاً قدیمی است. هرگز به Varzesh3 ارجاع ندهید.
+
+   محتوای قابل قبول (بر اساس تیترهای **امروز** از khabarvarzeshi و IranWire):
+   • نتیجه بازی، نقل و انتقالات، یا اعلامیه باشگاه/فدراسیون با تاریخ مشخص
+   • وضعیت ستاره‌های ایرانی در لیگ‌های خارجی (طارمی، جهانبخش، آزمون)
+   • اخبار جام جهانی ۲۰۲۶ یا تیم ملی
+   • اخبار لیگ برتر ایران، استقلال، پرسپولیس، سپاهان، تراکتور
+   • کشتی، والیبال، بسکتبال، تکواندو — رویدادهای امروز
+   **byline حتماً نام منبع واقعی (khabarvarzeshi.com یا IranWire) + URL واقعی از فهرست بالا.**
+   تاریخ بازی یا رویداد باید در ۷ روز اخیر باشد. اخبار قدیمی‌تر از یک هفته ننویسید.
 
 **۵.** section-header «اخبار محلی · کوشاداسی، سوکه، آیدین»
    **دقیقاً ۳ مقاله. محتوای قابل قبول بسیار وسیع است:**
