@@ -648,6 +648,60 @@ def build_news_context():
                 line += f"\n  📝 {it['summary']}"
             parts.append(line)
 
+    # Italian feeds (Rome culture + politics — was a Google-Search-only black hole)
+    italy_sources = [
+        ('ANSA Cultura',      'https://www.ansa.it/sito/notizie/cultura/cultura_rss.xml'),
+        ('ANSA Politica',     'https://www.ansa.it/sito/notizie/politica/politica_rss.xml'),
+        ('Repubblica Cronaca','https://www.repubblica.it/rss/cronaca/rss2.0.xml'),
+    ]
+    for name, url in italy_sources:
+        items = fetch_rss(url, name, max_items=5, encoding='utf-8')
+        if items:
+            parts.append(f"\n──── منبع: {name} (ایتالیا — RSS امروز) ────")
+            for it in items:
+                line = f"• «{it['title']}»"
+                if it['pub']:
+                    line += f"  [{it['pub']}]"
+                if it['link']:
+                    line += f"\n  🔗 {it['link']}"
+                if it['summary']:
+                    line += f"\n  📝 {it['summary']}"
+                parts.append(line)
+
+    # Spanish feeds (Barcelona local + culture — was also Google-Search-only)
+    spain_sources = [
+        ('La Vanguardia Barcelona', 'https://www.lavanguardia.com/rss/local/barcelona.xml'),
+        ('La Vanguardia Cultura',   'https://www.lavanguardia.com/rss/cultura.xml'),
+    ]
+    for name, url in spain_sources:
+        items = fetch_rss(url, name, max_items=5, encoding='utf-8')
+        if items:
+            parts.append(f"\n──── منبع: {name} (اسپانیا — RSS امروز) ────")
+            for it in items:
+                line = f"• «{it['title']}»"
+                if it['pub']:
+                    line += f"  [{it['pub']}]"
+                if it['link']:
+                    line += f"\n  🔗 {it['link']}"
+                if it['summary']:
+                    line += f"\n  📝 {it['summary']}"
+                parts.append(line)
+
+    # Turkish Süper Lig — Hürriyet sport feed
+    tr_sports = fetch_rss('https://www.hurriyet.com.tr/rss/spor', 'Hürriyet Spor',
+                          max_items=5, encoding='utf-8')
+    if tr_sports:
+        parts.append("\n──── منبع: Hürriyet Spor (Süper Lig — RSS امروز) ────")
+        for it in tr_sports:
+            line = f"• «{it['title']}»"
+            if it['pub']:
+                line += f"  [{it['pub']}]"
+            if it['link']:
+                line += f"\n  🔗 {it['link']}"
+            if it['summary']:
+                line += f"\n  📝 {it['summary']}"
+            parts.append(line)
+
     # Local Turkish feeds — kills the "Kuşadası tourism season" recycled placeholder.
     # All three checked live as of May 2026 with daily-or-faster updates.
     local_sources = [
@@ -1050,43 +1104,43 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
      جستجو: «Efes Antik Kenti» OR «Kuşadası kültür sanat» OR «Aydın etkinlik».
 
 **۶.** section-header gold «ورزش محلی · ترکیه»
-   ۱ مقاله. محتوای قابل قبول:
-   • نتیجه بازی Süper Lig (Galatasaray, Fenerbahçe, Beşiktaş, Trabzonspor, ...) با امتیاز و گلزن
+   ۱ مقاله. ⭐ **منبع اصلی: تیترهای امروز Hürriyet Spor از فهرست بالا** (فید زنده، روزانه چندین به‌روزرسانی).
+   محتوای قابل قبول:
+   • نتیجه بازی Süper Lig (Galatasaray, Fenerbahçe, Beşiktaş, Trabzonspor) با امتیاز و گلزن
    • وضعیت جدول لیگ یا تیم در رقابت‌های اروپایی (UEFA)
-   • پیش‌نمایش بازی آخر هفته با تاریخ و سعت
+   • پیش‌نمایش بازی آخر هفته با تاریخ و ساعت
    • نقل و انتقالات با نام بازیکن
-   جستجو: «Süper Lig» OR «Galatasaray Fenerbahçe» OR «Türkiye Kupası».
+   **byline حتماً Hürriyet Spor + URL واقعی از فهرست بالا.**
 
 **۷.** section-header blue «گزارش از رم»
    **دقیقاً ۲ مقاله. فوتبال اکیداً ممنوع.**
+   ⭐ **منبع اصلی: تیترهای امروز ANSA و Repubblica از فهرست بالا** — این فیدها چندین بار در روز به‌روزرسانی می‌شوند.
 
-   • مقاله ۷.۱ — **فرهنگی**:
-     - نمایشگاه در حال جریان در یک موزه/گالری مشخص (Galleria Borghese, MAXXI, Palazzo delle Esposizioni, Vatican Museums) با تاریخ شروع/پایان
-     - اپرا یا کنسرت در Teatro dell'Opera, Auditorium Parco della Musica
-     - فستیوال یا رویداد فرهنگی (Festa della Repubblica, RomaEuropa Festival)
-     - حفاری یا کشف باستان‌شناسی جدید با نام محقق
-     - اکران فیلم ایتالیایی با نام کارگردان و سینما
-     جستجو: «mostra Roma» OR «Galleria Borghese exhibition» OR «Roma cultura».
+   • مقاله ۷.۱ — **فرهنگی** (از فید ANSA Cultura):
+     - نمایشگاه، اپرا، فستیوال، باستان‌شناسی، فیلم، تئاتر در رم/ایتالیا
+     - نام مکان مشخص (موزه، تئاتر، گالری) + تاریخ
+     - byline حتماً ANSA + URL واقعی
 
-   • مقاله ۷.۲ — **سیاسی**:
-     - اعلامیه دولت ملونی با تاریخ و موضوع مشخص
-     - رای پارلمان یا قانون جدید
-     - دیدار دیپلماتیک با نام مقامات
-     - رابطه با اتحادیه اروپا، ایالات متحده، یا کشور مشخص
-     - اعتراض، اعتصاب، یا رویداد سیاسی شهر رم
-     جستجو: «Meloni governo» OR «politica italiana» OR «Roma Camera deputati».
+   • مقاله ۷.۲ — **سیاسی** (از فید ANSA Politica یا Repubblica Cronaca):
+     - اعلامیه دولت ملونی، پارلمان، رای، قانون جدید
+     - دیدار دیپلماتیک، رابطه با EU/USA
+     - اعتراض یا رویداد سیاسی
+     - byline حتماً ANSA Politica یا La Repubblica + URL واقعی
 
 **۸.** section-header green «بارسلونا · فرهنگ»
    **دقیقاً ۱ مقاله — فقط فرهنگی. FC Barcelona و فوتبال اکیداً ممنوع.**
-   محتوای قابل قبول:
-   • نمایشگاه در Museu Picasso, MACBA, MNAC, CCCB, CaixaForum (با تاریخ شروع/پایان)
+   ⭐ **منبع اصلی: تیترهای امروز La Vanguardia Cultura و La Vanguardia Barcelona از فهرست بالا** (فیدهای روزانه، روزنامه بزرگ کاتالان).
+
+   محتوای قابل قبول از این فیدها:
+   • نمایشگاه در Museu Picasso, MACBA, MNAC, CCCB, CaixaForum با تاریخ
    • کنسرت در Palau de la Música Catalana یا L'Auditori
    • نمایش در Liceu (اپرا)
-   • معماری گاودی: تور، رویداد، رستوراسیون با تاریخ
+   • معماری گاودی، Sagrada Família، Park Güell — رویداد یا کارگاه رستوراسیون
    • فستیوال (Sónar, Primavera Sound, Mercé) با تاریخ مشخص
-   • رستوران یا فعالیت گستروانتومی با نام سرآشپز
-   • مد، طراحی، یا هنر معاصر کاتالان
-   جستجو: «Barcelona cultura agenda» OR «Museu Picasso exhibition» OR «Palau Música concert» OR «Sagrada Família».
+   • رستوران، مد، طراحی، یا هنر معاصر کاتالان
+
+   **byline حتماً La Vanguardia + URL واقعی از فهرست بالا.**
+   اگر فقط خبر فوتبال در فیدها بود، از Google Search برای محتوای فرهنگی استفاده کنید.
 
 **۹.** section-header blue «آب و هوا»
    div.box: weather-grid (۳ روز کوشاداسی) + city-weather (کوشاداسی، رم، بارسلونا). دما و وضعیت دقیق.
