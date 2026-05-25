@@ -81,6 +81,11 @@ blockquote{margin:10px 0;padding:8px 12px;border-right:3px solid var(--red);back
 .health-tip{background:linear-gradient(135deg,#f0f7ee,#e0eee4);border-right:4px solid var(--green);padding:10px 12px;margin:12px 0;}
 .health-title{font-weight:800;color:var(--green);font-size:13px;margin-bottom:4px;}
 .health-text{font-size:12px;line-height:1.7;color:var(--ink-soft);}
+.poetry-box{background:linear-gradient(135deg,#f4ecdf,#eadfc6);border-right:4px solid var(--gold);padding:14px 16px;margin:14px 0;text-align:center;}
+.poetry-title{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1.5px;margin-bottom:6px;}
+.poetry-verses{font-family:'Amiri',serif;font-size:15px;line-height:2;color:var(--ink);margin:8px 0;direction:rtl;}
+.poetry-translation{font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:6px;line-height:1.7;}
+.poetry-attribution{font-size:11px;color:var(--faded);margin-top:8px;font-weight:600;letter-spacing:0.5px;}
 .turkish-word{background:linear-gradient(135deg,#fff5f5,#ffe8e8);border:1px solid var(--red);padding:10px 12px;margin:12px 0;text-align:center;}
 .turkish-title{font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px;}
 .turkish-main{font-size:22px;font-weight:800;color:var(--ink);margin:4px 0;}
@@ -189,6 +194,105 @@ RECIPE_ROTATION = [
 ]
 todays_recipe = RECIPE_ROTATION[now.timetuple().tm_yday % len(RECIPE_ROTATION)]
 print(f"🍽  Recipe today: {todays_recipe['name_fa']} ({todays_recipe['name_other']})")
+
+
+# --- 3e. TURKISH SONG ROTATION (14-day cycle — kills the "Tarkan Dudu every day" rut) ---
+SONG_ROTATION = [
+    {'artist': 'Tarkan',          'title': 'Dudu',                    'year': 2003,
+     'line_tr': 'Ağlamadan ayrılık olmaz, hatıralar uslu durmaz',
+     'line_fa': 'جدایی بدون گریه نمی‌شود، خاطرات آرام نمی‌گیرند'},
+    {'artist': 'Sezen Aksu',      'title': 'Geri Dön',                'year': 1988,
+     'line_tr': 'Geri dön, kal yanımda ne olur',
+     'line_fa': 'برگرد، کنارم بمان، خواهش می‌کنم'},
+    {'artist': 'Barış Manço',     'title': 'Gülpembe',                'year': 1981,
+     'line_tr': 'Bizim gülpembe annem, bizim gülpembe',
+     'line_fa': 'مادر گل‌پنبه‌ای ما، گل‌پنبه‌ای ما'},
+    {'artist': 'Müslüm Gürses',   'title': 'Affet',                   'year': 2010,
+     'line_tr': 'Affet beni, ben senden başka kimseyi sevmedim',
+     'line_fa': 'مرا ببخش، من جز تو کسی را دوست نداشتم'},
+    {'artist': 'Ajda Pekkan',     'title': 'Petrol',                  'year': 1981,
+     'line_tr': 'Petrol, petrol, petrol — para, para, para',
+     'line_fa': 'نفت، نفت، نفت — پول، پول، پول'},
+    {'artist': 'Aleyna Tilki',    'title': 'Sen Olsan Bari',          'year': 2017,
+     'line_tr': 'Sen olsan bari, hayalim olsan bari',
+     'line_fa': 'کاش لااقل تو می‌بودی، کاش لااقل خیال من می‌بودی'},
+    {'artist': 'Mabel Matiz',     'title': 'Maya',                    'year': 2021,
+     'line_tr': 'Bir mayam var, susulmaz bu ezgi',
+     'line_fa': 'مایه‌ای دارم که این آهنگ ساکت نمی‌شود'},
+    {'artist': 'Sertab Erener',   'title': 'Aşkın Bana Değen En Güzel Şey', 'year': 2009,
+     'line_tr': 'Aşkın bana değen en güzel şey',
+     'line_fa': 'عشقت زیباترین چیزی است که به من رسیده'},
+    {'artist': 'Cem Karaca',      'title': 'Resimdeki Gözyaşları',    'year': 1977,
+     'line_tr': 'Resimdeki gözyaşların hâlâ kurumaz',
+     'line_fa': 'اشک‌های روی عکس هنوز خشک نمی‌شوند'},
+    {'artist': 'Nilüfer',         'title': 'Erkekler de Ağlar',       'year': 1983,
+     'line_tr': 'Erkekler de ağlar, görünmez gözyaşları',
+     'line_fa': 'مردها هم گریه می‌کنند، فقط اشک‌هایشان دیده نمی‌شود'},
+    {'artist': 'Tarkan',          'title': 'Kuzu Kuzu',               'year': 2001,
+     'line_tr': 'Kuzu kuzu gelir bana yine',
+     'line_fa': 'باز هم آرام و رام پیش من می‌آیی'},
+    {'artist': 'Sıla',            'title': 'Boş Yere',                'year': 2014,
+     'line_tr': 'Boş yere ümitlendin yine boşa',
+     'line_fa': 'باز هم بیهوده امیدوار شدی، بیهوده'},
+    {'artist': 'Yıldız Tilbe',    'title': 'Delikanlım',              'year': 1994,
+     'line_tr': 'Delikanlım, senin için her şey kolay',
+     'line_fa': 'جوانم، برای تو همه چیز آسان است'},
+    {'artist': 'Edip Akbayram',   'title': 'Hasretinden Prangalar Eskittim', 'year': 1977,
+     'line_tr': 'Hasretinden prangalar eskittim',
+     'line_fa': 'از حسرت تو زنجیرها را فرسوده کردم'},
+]
+todays_song = SONG_ROTATION[now.timetuple().tm_yday % len(SONG_ROTATION)]
+print(f"🎵 Song today: {todays_song['artist']} — {todays_song['title']}")
+
+
+# --- 3f. PERSIAN POETRY ROTATION (evening edition — 14-day cycle) ---
+# Each entry: short verses (1-2 beyts), brief translation, attribution.
+POETRY_ROTATION = [
+    {'poet': 'عمر خیام', 'work': 'رباعیات',
+     'verses': 'این یک‌دو سه روزه نوبت عمر گذشت\nچون آب به جویبار و چون باد به دشت\nهرگز غم دو روز مرا یاد نگشت\nروزی که نیامده‌ست و روزی که گذشت',
+     'translation': 'این چند روز کوتاه عمر گذشت، چون آب در جوی و باد در دشت. هرگز غم دو روز را به دل راه ندادم: روزی که هنوز نیامده، و روزی که گذشته.'},
+    {'poet': 'حافظ', 'work': 'دیوان حافظ',
+     'verses': 'دل می‌رود ز دستم صاحب‌دلان خدا را\nدردا که راز پنهان خواهد شد آشکارا',
+     'translation': 'دلم از دست می‌رود ای صاحب‌دلان، به خاطر خدا کمک کنید — دریغ که این راز نهفته آشکار خواهد شد.'},
+    {'poet': 'سعدی', 'work': 'گلستان',
+     'verses': 'بنی آدم اعضای یکدیگرند\nکه در آفرینش ز یک گوهرند\nچو عضوی به درد آورد روزگار\nدگر عضوها را نماند قرار',
+     'translation': 'فرزندان آدم اعضای یک پیکرند که در آفرینش از یک گوهر سرشته‌اند. چون عضوی به درد آید، اعضای دیگر آرام و قرار ندارند.'},
+    {'poet': 'مولانا', 'work': 'مثنوی معنوی',
+     'verses': 'بشنو از نی چون حکایت می‌کند\nاز جدایی‌ها شکایت می‌کند\nکز نیستان تا مرا ببریده‌اند\nاز نفیرم مرد و زن نالیده‌اند',
+     'translation': 'از این نی بشنو که چگونه حکایت می‌کند — از جدایی‌ها شکایت می‌کند: از زمانی که مرا از نیستان بریده‌اند، فریاد من مرد و زن را به ناله انداخته است.'},
+    {'poet': 'عمر خیام', 'work': 'رباعیات',
+     'verses': 'ای دوست بیا تا غم فردا نخوریم\nو این یک‌دم عمر را غنیمت شمریم\nفردا که ازین دیر کهن درگذریم\nبا هفت‌هزار سالگان سر به سریم',
+     'translation': 'ای دوست بیا غم فردا نخوریم و این لحظه عمر را غنیمت بدانیم. فردا که از این کاروانسرای کهن می‌گذریم، با هفت‌هزار سال‌سالگانِ خاک شده هم‌سرنوشت خواهیم بود.'},
+    {'poet': 'حافظ', 'work': 'دیوان حافظ',
+     'verses': 'گل در بر و می در کف و معشوق به کام است\nسلطان جهانم به چنین روز غلام است',
+     'translation': 'گل در آغوش، می در دست، معشوق در کنار — در چنین روزی، سلطان جهان به نوکری من می‌نازد.'},
+    {'poet': 'فروغ فرخزاد', 'work': 'تولدی دیگر',
+     'verses': 'تنها صداست که می‌ماند\nدر سرزمین قدکوتاهان\nمعیارهای سنجش\nهمیشه بر مدار صفر سفر کرده‌اند',
+     'translation': 'تنها صدا است که باقی می‌ماند — در سرزمین قدکوتاهان، معیارهای سنجش همیشه بر مدار صفر چرخیده‌اند.'},
+    {'poet': 'سهراب سپهری', 'work': 'حجم سبز',
+     'verses': 'زندگی رسم خوشایندی است\nزندگی بال و پری دارد با وسعت مرگ\nپرشی دارد اندازه عشق\nزندگی چیزی نیست که لب طاقچه عادت از یاد من و تو برود',
+     'translation': 'زندگی رسم خوشایندی است؛ زندگی بال و پری دارد به پهنای مرگ، پرشی دارد به اندازه عشق. زندگی چیزی نیست که بر لب طاقچه عادت از یاد ما برود.'},
+    {'poet': 'عمر خیام', 'work': 'رباعیات',
+     'verses': 'هر سبزه که بر کنار جویی رسته است\nگویی ز لب فرشته خویی رسته است\nپا بر سر سبزه تا به خواری ننهی\nکان سبزه ز خاک لاله‌رویی رسته است',
+     'translation': 'هر سبزه‌ای که در کنار جویی روییده، گویی از لب فرشته‌خویی سر برآورده است. پای خود را به خواری بر سبزه مگذار، که آن سبزه از خاک لاله‌رخساری روییده است.'},
+    {'poet': 'احمد شاملو', 'work': 'هوای تازه',
+     'verses': 'من درد مشترکم\nمرا فریاد کن\nانسان است که می‌سراید\nسرود انسان عظیم‌ترین سرود است',
+     'translation': 'من دردی مشترکم، مرا فریاد کن — این انسان است که می‌سراید، و سرود انسان عظیم‌ترین سرود جهان است.'},
+    {'poet': 'حافظ', 'work': 'دیوان حافظ',
+     'verses': 'سال‌ها دل طلب جام جم از ما می‌کرد\nوآنچه خود داشت ز بیگانه تمنا می‌کرد',
+     'translation': 'سال‌ها دل از ما جام جم را می‌طلبید — و آنچه خود در درون داشت، از بیگانه آرزو می‌کرد.'},
+    {'poet': 'مولانا', 'work': 'دیوان شمس',
+     'verses': 'هر روز نوگل دگری چیدن از وفاست\nروزی به یاد بود و دگر روز در صفاست\nهرکس به قدر دانش خود بهره‌ای برد\nاز این بساط که بر روی خاک ماست',
+     'translation': 'هر روز چیدن گل تازه‌ای از وفاداری است — روزی به یادگار، روزی در شادی. هر کس به اندازه دانش خود از این سفره‌ای که بر روی خاک گسترده‌ایم بهره می‌برد.'},
+    {'poet': 'عمر خیام', 'work': 'رباعیات',
+     'verses': 'گویند که فردوس برین خواهد بود\nوآنجا می ناب و حورعین خواهد بود\nگر ما می و معشوق گزیدیم چه باک\nچون عاقبت کار همین خواهد بود',
+     'translation': 'گویند که فردوس برترین خواهد بود و آنجا شراب ناب و حورعین — اگر ما در این جهان می و معشوق برگزیدیم چه باک، چون عاقبت همه به همان جا خواهیم رسید.'},
+    {'poet': 'سعدی', 'work': 'بوستان',
+     'verses': 'دو چیز طیره‌ی عقل است: دم فروبستن\nبه وقت گفتن و گفتن به وقت خاموشی',
+     'translation': 'دو چیز سبب خفت عقل است: لب فروبستن هنگامی که باید سخن گفت، و سخن گفتن هنگامی که باید خاموش بود.'},
+]
+todays_poem = POETRY_ROTATION[now.timetuple().tm_yday % len(POETRY_ROTATION)]
+print(f"📜 Poem today: {todays_poem['poet']} — {todays_poem['work']}")
 
 
 # --- 3c. MEMORIAL CSS OVERRIDE & BANNER BUILDER ---
@@ -544,6 +648,27 @@ def build_news_context():
                 line += f"\n  📝 {it['summary']}"
             parts.append(line)
 
+    # Local Turkish feeds — kills the "Kuşadası tourism season" recycled placeholder.
+    # All three checked live as of May 2026 with daily-or-faster updates.
+    local_sources = [
+        ('Aydın Post',        'https://www.aydinpost.com/rss'),
+        ('Kuşadası.gen.tr',   'https://www.kusadasi.gen.tr/rss'),
+        ('Söke Gündem',       'https://www.sokegundem.com/rss'),
+    ]
+    for name, url in local_sources:
+        items = fetch_rss(url, name, max_items=5, encoding='utf-8')
+        if items:
+            parts.append(f"\n──── منبع: {name} (محلی ترکیه — RSS امروز) ────")
+            for it in items:
+                line = f"• «{it['title']}»"
+                if it['pub']:
+                    line += f"  [{it['pub']}]"
+                if it['link']:
+                    line += f"\n  🔗 {it['link']}"
+                if it['summary']:
+                    line += f"\n  📝 {it['summary']}"
+                parts.append(line)
+
     # khabarvarzeshi — live Persian sports feed (Varzesh3 is dead, frozen 2025-08-25)
     kv_items = fetch_khabarvarzeshi(max_items=6)
     if kv_items:
@@ -608,6 +733,104 @@ if MEMORIAL_MODE:
 
 ══════════════════════════════════════════════════════════════
 """
+
+
+# --- 4d. MORNING vs EVENING section blocks ---
+# Two editions intentionally feel different:
+#   MORNING — energetic, planning-the-day: Turkish word + song + recipe + Migros
+#   EVENING — reflective, closing-the-day: expanded health + Persian poetry
+# Recipe goes to morning because the Migros basket aligns with the day's shopping
+# pattern. By evening it's too late to act on.
+
+MORNING_SECTIONS = f"""**۱۰.** div.turkish-word — **کلمه ترکی روز** (Turkish Word of the Day):
+   یک کلمه یا عبارت ترکی روزمره با ترجمه فارسی و یک مثال کوتاه. **متفاوت از ترانه روز پایین.**
+   ساختار: <div class="turkish-word"> با turkish-title "★ کلمه ترکی روز ★"، turkish-main برای کلمه ترکی، turkish-meaning برای ترجمه فارسی، turkish-ex برای جمله مثال (ترکی + ترجمه فارسی).
+
+**۱۱.** div.turkish-word (با کلاس دوم) — **ترانه ترکی روز** (Turkish Song of the Day):
+
+   ⭐ **ترانه امروز از فهرست داخلی انتخاب شده — دقیقاً همین را بنویسید:**
+   • نام ترانه: **{todays_song['title']}**
+   • خواننده: **{todays_song['artist']}**
+   • سال انتشار: **{todays_song['year']}**
+   • مصرع ترکی: «{todays_song['line_tr']}»
+   • ترجمه فارسی: «{todays_song['line_fa']}»
+
+   ⚠️ **قانون مهم برای لینک‌ها:**
+   هرگز از فرمت `https://open.spotify.com/track/<id>` استفاده نکنید — شناسه‌های track را نمی‌دانید.
+   همیشه URL جستجو که در همه جا کار می‌کند:
+     - Spotify: `https://open.spotify.com/search/{todays_song['artist'].replace(' ', '%20')}%20{todays_song['title'].replace(' ', '%20')}`
+     - YouTube: `https://www.youtube.com/results?search_query={todays_song['artist'].replace(' ', '+')}+{todays_song['title'].replace(' ', '+')}`
+
+   ساختار:
+   <div class="turkish-word">
+     <div class="turkish-title">★ ترانه ترکی روز ★</div>
+     <div class="turkish-main">{todays_song['title']}</div>
+     <div class="turkish-meaning">{todays_song['artist']} · {todays_song['year']}</div>
+     <div class="turkish-ex">
+       <strong>{todays_song['line_tr']}</strong><br>
+       {todays_song['line_fa']}<br>
+       <a href="https://open.spotify.com/search/{todays_song['artist'].replace(' ', '%20')}%20{todays_song['title'].replace(' ', '%20')}" target="_blank">🎧 Spotify</a> ·
+       <a href="https://www.youtube.com/results?search_query={todays_song['artist'].replace(' ', '+')}+{todays_song['title'].replace(' ', '+')}" target="_blank">▶ YouTube</a>
+     </div>
+   </div>
+
+**۱۲.** div.history-box — ۳ رویداد تاریخی این روز (با history-year پررنگ).
+
+**۱۳.** div.health-tip — کوتاه (یک پاراگراف). مناسب سن ۷۰+، مرتبط با هوای امروز یا فصل.
+
+**۱۴.** section-header green «آشپزی · دستور روز»
+   **دستور امروز:** {todays_recipe['name_fa']} ({todays_recipe['name_other']})
+   **راهنما / شرح کلی:** {todays_recipe['hint']}
+
+   شما **حتماً** همین دستور را بنویسید — تنوع روزانه یک ارزش جدی این روزنامه است.
+   • recipe-title: نام فارسی دستور
+   • recipe-heading «📌 اجزا»: فهرست دقیق مواد لازم برای ۴ نفر
+   • recipe-heading «🧑‍🍳 طرز تهیه»: مراحل شماره‌گذاری شده (۶ تا ۸ مرحله)
+   • recipe-heading «💚 یادداشت سلامتی»: یک پاراگراف کوتاه درباره ارزش غذایی برای سن ۷۰+
+
+   ⛔ **اکیداً ممنوع:** سوپ عدس قرمز (Mercimek Çorbası).
+
+**۱۵.** div.migros-box — مواد لازم **همان دستور بالا ({todays_recipe['name_fa']})** با قیمت‌های روز.
+   **دقت قیمت:** قیمت‌های واقعی فعلی میگروس ترکیه (۲۰۲۶). اگر قیمت دقیق در دسترس نیست، عبارت «قیمت‌ها تقریبی — لطفاً در فروشگاه تأیید کنید» را در migros-total اضافه کنید."""
+
+EVENING_SECTIONS = f"""**۱۰.** div.history-box — ۳ رویداد تاریخی این روز (با history-year پررنگ).
+
+**۱۱.** div.health-tip — **نسخه عصر: گسترش یافته (۲ پاراگراف).**
+   - پاراگراف اول: یک نکته بهداشتی مشخص و عملی برای شب — مثلاً تکنیک تنفس برای خواب بهتر، حرکت کششی قبل از خواب، چای گیاهی مفید (نام ببرید: بابونه، گل گاوزبان، آویشن)، یا توصیه‌ای درباره مصرف آب در شب.
+   - پاراگراف دوم: یک تذکر کوچک‌تر — مثلاً درباره دارو شبانه، ساعت خواب، یا یک ورزش سبک.
+   مناسب سن ۷۰+ و مرتبط با هوای امروز یا فصل.
+
+**۱۲.** section-header gold «شعر شبانه» (Evening Poetry)
+   div.poetry-box با شعر فارسی منتخب امروز:
+   • **شاعر امروز: {todays_poem['poet']}** — از *{todays_poem['work']}*
+   • **ابیات:**
+     {todays_poem['verses']}
+   • **توضیح کوتاه فارسی (نه ترجمه — فقط شرح حال):** {todays_poem['translation']}
+
+   ساختار دقیق:
+   <div class="poetry-box">
+     <div class="poetry-title">★ شعر شبانه ★</div>
+     <div class="poetry-verses">[ابیات با <br> بین مصرع‌ها]</div>
+     <div class="poetry-translation">[شرح کوتاه]</div>
+     <div class="poetry-attribution">— {todays_poem['poet']} · {todays_poem['work']} —</div>
+   </div>
+
+**۱۳.** بسط یک یا دو مقاله از بخش‌های خبر (ایران/جهان یا گزارش از رم):
+   در نسخه عصر، یکی از مقالات بخش‌های قبل (Iran/Rome/Barcelona/local) را با یک **پاراگراف تحلیلی اضافی** گسترش دهید — این پاراگراف بعد از پاراگراف‌های اصلی مقاله اضافه می‌شود (نه به‌عنوان مقاله جدید). محتوای پاراگراف تحلیلی: زمینه تاریخی، تأثیر بر منطقه، یا پیامد محتمل.
+   • برای این کار، در مقاله انتخابی، یک پاراگراف چهارم با کلاس معمولی <p> اضافه کنید که شروع آن «در تحلیل خبر:» باشد.
+   • فقط **یک یا دو** مقاله را گسترش دهید — نه همه.
+
+⛔ **در نسخه عصر این بخش‌ها وجود ندارد:** آشپزی، میگروس، کلمه ترکی، ترانه ترکی. آن‌ها در نسخه صبح هستند."""
+
+
+is_morning = (edition_en == "Morning")
+morning_or_evening_specific_sections = MORNING_SECTIONS if is_morning else EVENING_SECTIONS
+closing_tone = (
+    "صبح است — لحن گرم، انگیزه‌بخش، آغاز روز. ۲ تا ۳ جمله."
+    if is_morning
+    else "عصر است — لحن آرام، شاعرانه، خاتمه روز. مرتبط با یکی از تیترهای امروز یا با حال‌و‌هوای فصل. ۳ تا ۵ جمله."
+)
+
 
 PROMPT = f"""شما سردبیر ارشد روزنامه «کوشاداسی هرالد سان» — روزنامه فارسی‌زبان روزانه برای جامعه فارسی‌زبان در کوشاداسی (سواحل اژه ترکیه) و خارج.
 
@@ -798,7 +1021,9 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
    تاریخ بازی یا رویداد باید در ۷ روز اخیر باشد. اخبار قدیمی‌تر از یک هفته ننویسید.
 
 **۵.** section-header «اخبار محلی · کوشاداسی، سوکه، آیدین»
-   **دقیقاً ۳ مقاله. محتوای قابل قبول بسیار وسیع است:**
+   **دقیقاً ۳ مقاله.** ⭐ **منبع اصلی: تیترهای امروز Aydın Post, Kuşadası.gen.tr, Söke Gündem از فهرست بالا** — این سه فید زنده هستند و هر روز خبرهای متفاوت دارند. **نسخه قدیمی یا کلی ننویسید** — هر مقاله باید از تیتر واقعی یکی از این سه فید گرفته شود، با URL واقعی در byline.
+
+   محتوای قابل قبول بسیار وسیع است:
 
    • مقاله ۵.۱ — خبری از **سوکه** یا منطقه نزدیک سوکه:
      - اعلامیه شهرداری Söke یا کایماکام
@@ -866,61 +1091,11 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
 **۹.** section-header blue «آب و هوا»
    div.box: weather-grid (۳ روز کوشاداسی) + city-weather (کوشاداسی، رم، بارسلونا). دما و وضعیت دقیق.
 
-**۱۰.** div.turkish-word — **ترانه ترکی روز** (Turkish Song of the Day):
+{morning_or_evening_specific_sections}
 
-   ⚠️ **قانون مهم برای لینک Spotify و YouTube:**
-   - **هرگز** از فرمت `https://open.spotify.com/track/<id>` استفاده نکنید — شما نمی‌توانید شناسه‌های واقعی track را بدانید و حدس زدن آن‌ها به لینک مرده منجر می‌شود.
-   - **همیشه** از URL جستجو استفاده کنید که در همه جا (از جمله ترکیه) کار می‌کند:
-     - Spotify: `https://open.spotify.com/search/[ARTIST]%20[TITLE]` (space → %20)
-     - YouTube: `https://www.youtube.com/results?search_query=[ARTIST]+[TITLE]` (space → +)
+**[N-2].** div.closing — پیام پایانی. {closing_tone}
 
-   ساختار دقیق:
-   ```
-   <div class="turkish-word">
-     <div class="turkish-title">★ ترانه ترکی روز ★</div>
-     <div class="turkish-main">[نام ترانه]</div>
-     <div class="turkish-meaning">[نام خواننده] · [سال انتشار]</div>
-     <div class="turkish-ex">
-       <strong>[یک مصرع ترکی]</strong><br>
-       [ترجمه فارسی همان مصرع]<br>
-       <a href="https://open.spotify.com/search/[ARTIST]%20[TITLE]" target="_blank">🎧 Spotify</a> ·
-       <a href="https://www.youtube.com/results?search_query=[ARTIST]+[TITLE]" target="_blank">▶ YouTube</a>
-     </div>
-   </div>
-   ```
-
-   مثال کامل و درست برای ترانه «Dudu» اثر Tarkan:
-   ```
-   <a href="https://open.spotify.com/search/Tarkan%20Dudu" target="_blank">🎧 Spotify</a> ·
-   <a href="https://www.youtube.com/results?search_query=Tarkan+Dudu" target="_blank">▶ YouTube</a>
-   ```
-
-   - یک ترانه ترکی معروف و کلاسیک یا محبوب امروزی (Tarkan, Sezen Aksu, Barış Manço, Müslüm Gürses, Ajda Pekkan, Aleyna Tilki, Mabel Matiz, Tarkan Tevetoğlu, Emre Aydın, Sıla, Ezhel و...).
-   - ۱ تا ۲ مصرع کوتاه از متن ترانه به ترکی و ترجمه فارسی.
-   - **در URLها از فاصله یا کاراکترهای فارسی استفاده نکنید** — فقط نام انگلیسی/ترکی هنرمند و آهنگ. فاصله = `%20` در Spotify، `+` در YouTube.
-
-**۱۱.** div.history-box — ۳ رویداد تاریخی این روز (با history-year پررنگ).
-
-**۱۲.** div.health-tip — مناسب سن ۷۰+، مرتبط با هوای امروز یا فصل.
-
-**۱۳.** section-header green «آشپزی · دستور روز»
-   **دستور امروز:** {todays_recipe['name_fa']} ({todays_recipe['name_other']})
-   **راهنما / شرح کلی:** {todays_recipe['hint']}
-
-   شما **حتماً** همین دستور را بنویسید — تنوع روزانه یک ارزش جدی این روزنامه است.
-   • recipe-title: نام فارسی دستور
-   • recipe-heading «📌 اجزا»: فهرست دقیق مواد لازم برای ۴ نفر
-   • recipe-heading «🧑‍🍳 طرز تهیه»: مراحل شماره‌گذاری شده (۶ تا ۸ مرحله)
-   • recipe-heading «💚 یادداشت سلامتی»: یک پاراگراف کوتاه درباره ارزش غذایی برای سن ۷۰+
-
-   ⛔ **اکیداً ممنوع:** سوپ عدس قرمز (Mercimek Çorbası / مرسیمک چوربا‌سی) — این دستور به حد کافی پخته شده و خوانندگان از تکرار آن خسته شده‌اند. هرگز نوشته نشود.
-
-**۱۴.** div.migros-box — مواد لازم **همان دستور بالا ({todays_recipe['name_fa']})** با قیمت‌های روز.
-   **دقت قیمت:** قیمت‌های واقعی فعلی در سوپرمارکت میگروس ترکیه (مه ۲۰۲۶). اگر قیمت دقیق در دسترس نیست، در پایان جعبه (داخل migros-total یا قبل از آن) عبارت «قیمت‌ها تقریبی — لطفاً در فروشگاه تأیید کنید» را اضافه کنید.
-
-**۱۵.** div.closing — پیام پایانی گرم.
-
-**۱۶.** div.footer — colophon، فهرست منابع امروز (نام دقیق رسانه‌هایی که واقعاً استفاده شده‌اند، نه فهرست عمومی)، تاریخ شماره بعدی. **بدون ایمیل، بدون آدرس وب، بدون «info@» یا «https».**
+**[N-1].** div.footer — colophon، فهرست منابع امروز (نام دقیق رسانه‌هایی که واقعاً استفاده شده‌اند، نه فهرست عمومی)، تاریخ شماره بعدی. **بدون ایمیل، بدون آدرس وب، بدون «info@» یا «https».**
 
 ══════════════════════════════════════════════════════════════
 **یادآوری نهایی:** قبل از نوشتن، خود را بپرسید: «این جمله را آیا فقط امروز می‌توانم بنویسم — با نام، تاریخ، یا عدد مشخص؟» اگر نه، بازنویسی کنید.
