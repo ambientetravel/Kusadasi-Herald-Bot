@@ -519,15 +519,34 @@ def fetch_telegram_public(username, max_msgs=6):
         return []
 
 
-def fetch_varzesh3_worldcup(max_items=3):
-    """Scrape Varzesh3's World Cup league page. Page is JS-hydrated for the
-    article CARDS but the underlying /news/<id>/<slug> URLs ARE embedded in
-    the static HTML — extract them and decode the Persian-slug into a title.
-    ~200 URLs available per fetch; we take the first N which match the
-    page's left-column (newest) articles.
+def _fetch_v3_meta(url):
+    """Quick fetch of og:title + og:description from a Varzesh3 article page.
+    Returns the properly-punctuated headline and a one-line summary — these are
+    far better than the slug-extracted title for prompting the model."""
+    try:
+        r = requests.get(url, headers=UA_HEADERS, timeout=10)
+        if r.status_code != 200:
+            return None, None
+        r.encoding = 'utf-8'
+        og_title = re.search(
+            r'<meta[^>]+(?:property|name)="og:title"[^>]+content="([^"]+)"', r.text)
+        og_desc = re.search(
+            r'<meta[^>]+(?:property|name)="og:description"[^>]+content="([^"]+)"', r.text)
+        title = htmllib.unescape(og_title.group(1)) if og_title else None
+        desc = htmllib.unescape(og_desc.group(1)) if og_desc else None
+        return title, desc
+    except Exception:
+        return None, None
 
-    Varzesh3's RSS is frozen (2025-08-25), but THIS specific page is server-
-    rendered with current URLs daily, which is why we scrape it directly."""
+
+def fetch_varzesh3_worldcup(max_items=3):
+    """Scrape Varzesh3's World Cup league page for article URLs (the page is
+    JS-hydrated for cards but article hrefs ARE in static HTML, ~200 per
+    fetch). Then enrich each pick with og:title + og:description via a
+    per-article fetch — gives the model REAL titles and summaries instead of
+    just the dashed slug, which produced thin filler articles before.
+
+    Varzesh3's RSS is frozen (2025-08-25); this page is the only live source."""
     url = ('https://www.varzesh3.com/football/league/28/'
            '%D8%AC%D8%A7%D9%85-%D8%AC%D9%87%D8%A7%D9%86%DB%8C')
     try:
@@ -538,25 +557,34 @@ def fetch_varzesh3_worldcup(max_items=3):
             return []
         r.encoding = 'utf-8'
         seen = set()
-        out = []
+        url_list = []
         for m in re.finditer(r'/news/(\d+)/([^\s"<>]+)', r.text):
             news_id = m.group(1)
             slug = m.group(2).rstrip('"').rstrip('/').rstrip(',')
             if news_id in seen:
                 continue
             seen.add(news_id)
-            title = unquote(slug).replace('-', ' ').strip()
-            if len(title) < 10:
+            slug_title = unquote(slug).replace('-', ' ').strip()
+            if len(slug_title) < 10:
                 continue
-            out.append({
-                'title': title,
-                'link': f'https://www.varzesh3.com/news/{news_id}/{slug}',
-                'pub': '',
-                'summary': '',
-            })
-            if len(out) >= max_items:
+            url_list.append((news_id, slug, slug_title))
+            if len(url_list) >= max_items:
                 break
-        print(f"   WC  ✓ Varzesh3 World Cup: {len(out)} articles")
+
+        # Enrich each URL with proper og: meta — ~5 quick fetches in series
+        out = []
+        for news_id, slug, slug_title in url_list:
+            article_url = f'https://www.varzesh3.com/news/{news_id}/{slug}'
+            real_title, real_desc = _fetch_v3_meta(article_url)
+            out.append({
+                'title': real_title or slug_title,
+                'link': article_url,
+                'pub': '',
+                'summary': real_desc or '',
+            })
+        with_summary = sum(1 for o in out if o['summary'])
+        print(f"   WC  ✓ Varzesh3 World Cup: {len(out)} articles "
+              f"({with_summary} with og:description summaries)")
         return out
     except Exception as e:
         print(f"   WC  ✗ Varzesh3 WC: {e}")
@@ -793,6 +821,8 @@ def build_news_context():
             line = f"• «{it['title']}»"
             if it['link']:
                 line += f"\n  🔗 {it['link']}"
+            if it['summary']:
+                line += f"\n  📝 {it['summary']}"
             parts.append(line)
 
     # khabarvarzeshi — live Persian sports feed (Varzesh3 is dead, frozen 2025-08-25)
@@ -917,7 +947,26 @@ MORNING_SECTIONS = f"""**۱۰.** div.turkish-word — **کلمه ترکی روز
    ⛔ **اکیداً ممنوع:** سوپ عدس قرمز (Mercimek Çorbası).
 
 **۱۵.** div.migros-box — مواد لازم **همان دستور بالا ({todays_recipe['name_fa']})** با قیمت‌های روز.
-   **دقت قیمت:** قیمت‌های واقعی فعلی میگروس ترکیه (۲۰۲۶). اگر قیمت دقیق در دسترس نیست، عبارت «قیمت‌ها تقریبی — لطفاً در فروشگاه تأیید کنید» را در migros-total اضافه کنید."""
+   **دقت قیمت — مهم:**
+   تاریخ امروز **{today_human_en}** است. لیر ترکیه در یک سال گذشته به‌شدت ضعیف شده و قیمت‌ها هر ماه تغییر می‌کنند. **از قیمت‌های ۲۰۲۵ یا قبل از ۲۰۲۶ استفاده نکنید** — قیمت‌ها باید مربوط به **ماه فعلی ({today_str})** باشند.
+
+   راهنمای سطح قیمت میگروس برای ژوئن ۲۰۲۶ (تقریبی):
+   • نان (۱ قرص): ۱۵-۲۰ ₺
+   • تخم‌مرغ (۱۰ عددی): ۱۲۰-۱۵۰ ₺
+   • گوشت گوساله (۱ کیلو): ۸۵۰-۱،۰۵۰ ₺
+   • مرغ (۱ کیلو): ۱۸۰-۲۲۰ ₺
+   • شیر (۱ لیتر): ۵۰-۶۵ ₺
+   • گوجه‌فرنگی (۱ کیلو): ۴۰-۶۰ ₺ (فصلی)
+   • بادمجان (۱ کیلو): ۳۵-۵۰ ₺ (تابستان ارزان‌تر)
+   • پنیر سفید (۲۵۰ گرم): ۱۰۰-۱۳۰ ₺
+   • روغن زیتون (۵۰۰ میل): ۲۰۰-۲۸۰ ₺
+   • برنج (۱ کیلو): ۸۰-۱۱۰ ₺
+   • سیر (۱۰۰ گرم): ۲۵-۳۵ ₺
+   • پیاز (۱ کیلو): ۲۰-۳۰ ₺
+
+   **اگر قیمت دقیق نمی‌دانید، از این محدوده‌ها استفاده کنید — قیمت میانگین را بنویسید.** هرگز قیمت‌های زیر این محدوده ننویسید (نشانه قیمت قدیمی است).
+
+   در migros-total بنویسید: «قیمت‌ها تقریبی برای ژوئن ۲۰۲۶ — ممکن است در فروشگاه تا ۱۵٪ متفاوت باشد.»"""
 
 EVENING_SECTIONS = f"""**۱۰.** div.history-box — ۳ رویداد تاریخی این روز (با history-year پررنگ).
 
@@ -958,9 +1007,20 @@ if wc_section_enabled:
     worldcup_section = f"""**۴ب.** section-header gold «جام جهانی ۲۰۲۶» (World Cup News)
    ⭐ **منبع اصلی: Varzesh3 — صفحه جام جهانی ۲۰۲۶ از فهرست بالا.**
    **تعداد مقاله امروز: دقیقاً {wc_count}** (بر اساس فاز فعلی جام جهانی).
-   هر مقاله: kicker «جام جهانی»، h2.lead، h3.deck (اختیاری)، byline-row با نام «Varzesh3» و URL واقعی از فید بالا، یک یا دو پاراگراف خلاصه.
-   مقالات کوتاه نگه دارید — هر مقاله ۲ تا ۳ جمله. هدف: مرور سریع مهم‌ترین خبرهای جام جهانی، نه پوشش عمیق.
-   اگر تیترهای کافی از Varzesh3 در فهرست بالا نیست، با تعداد موجود کفایت کنید. این بخش مکمل بخش ورزش ایران و جهان است."""
+
+   **مهم — کیفیت مقاله:**
+   • از فید بالا، تیترهای واقعی (پس از «•») و خلاصه (پس از «📝») را پیدا کنید.
+   • h2.lead: همان تیتر واقعی (نه از URL slug ساخته شده — تیتر دقیق پس از «•» در فید).
+   • h3.deck: همان خلاصه (پس از «📝»).
+   • پاراگراف اصلی: ۲ تا ۳ جمله که خلاصه را گسترش می‌دهد، نه فقط آن را تکرار می‌کند.
+   • byline-row: «به نقل از Varzesh3، {today_str}» + **لینک به مقاله اصلی**.
+
+   **byline-row باید شامل یک لینک قابل کلیک باشد:**
+   <div class="byline-row">
+     <span class="name">به نقل از <a href="[URL واقعی از فید]" target="_blank">Varzesh3</a>، {today_str}</span>
+   </div>
+
+   مقالات کوتاه نگه دارید — ۲ تا ۳ جمله. هدف: مرور سریع، نه پوشش عمیق."""
 else:
     worldcup_section = ""  # tournament finished, skip section
 closing_tone = (
