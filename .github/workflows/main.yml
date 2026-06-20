@@ -1,7 +1,7 @@
 name: Kusadasi Herald Automated Engine
 on:
   schedule:
-     - cron: '30 4,15 * * *'
+    # GHA latency on this repo: ~5h morning / ~3h evening (audited).     # Pre-schedule so delayed actual fire lands at target local time.     - cron: '0 2,15 * * *'   # 02:00 + ~5h = 10:00 local (AM)                               # 15:00 + ~3h = 21:00 local (PM)
   workflow_dispatch:
 
 jobs:
