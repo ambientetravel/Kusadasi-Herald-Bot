@@ -295,6 +295,22 @@ todays_poem = POETRY_ROTATION[now.timetuple().tm_yday % len(POETRY_ROTATION)]
 print(f"📜 Poem today: {todays_poem['poet']} — {todays_poem['work']}")
 
 
+# --- 3g. WORLD CUP 2026 COVERAGE — date-scaled article count ---
+# User asked: start mellow, ramp up as the tournament reaches playoffs.
+# FIFA WC 2026 calendar: June 11–July 19, 2026, US/Canada/Mexico.
+def worldcup_article_count(today):
+    md = (today.month, today.day)
+    if md < (6, 11):  return 1   # pre-tournament — single warm-up article
+    if md < (6, 28):  return 2   # group stage
+    if md < (7, 9):   return 3   # Round of 16 + Quarter-finals
+    return 4                      # Semis + Final — peak coverage
+wc_count = worldcup_article_count(now)
+# Tournament has ended (after July 20) → disable section
+wc_section_enabled = (now.month, now.day) <= (7, 20)
+print(f"🏆 World Cup section: {'enabled' if wc_section_enabled else 'disabled'}, "
+      f"target {wc_count} article(s)")
+
+
 # --- 3c. MEMORIAL CSS OVERRIDE & BANNER BUILDER ---
 # When MEMORIAL_MODE is on, this CSS overrides the default palette to a muted
 # mourning palette: aged parchment, charcoal ink, deep oxblood/maroon instead
@@ -500,6 +516,50 @@ def fetch_telegram_public(username, max_msgs=6):
         return out
     except Exception as e:
         print(f"   TG  ✗ @{username}: {e}")
+        return []
+
+
+def fetch_varzesh3_worldcup(max_items=3):
+    """Scrape Varzesh3's World Cup league page. Page is JS-hydrated for the
+    article CARDS but the underlying /news/<id>/<slug> URLs ARE embedded in
+    the static HTML — extract them and decode the Persian-slug into a title.
+    ~200 URLs available per fetch; we take the first N which match the
+    page's left-column (newest) articles.
+
+    Varzesh3's RSS is frozen (2025-08-25), but THIS specific page is server-
+    rendered with current URLs daily, which is why we scrape it directly."""
+    url = ('https://www.varzesh3.com/football/league/28/'
+           '%D8%AC%D8%A7%D9%85-%D8%AC%D9%87%D8%A7%D9%86%DB%8C')
+    try:
+        from urllib.parse import unquote
+        r = requests.get(url, headers=UA_HEADERS, timeout=20)
+        if r.status_code != 200:
+            print(f"   WC  ✗ Varzesh3 WC: HTTP {r.status_code}")
+            return []
+        r.encoding = 'utf-8'
+        seen = set()
+        out = []
+        for m in re.finditer(r'/news/(\d+)/([^\s"<>]+)', r.text):
+            news_id = m.group(1)
+            slug = m.group(2).rstrip('"').rstrip('/').rstrip(',')
+            if news_id in seen:
+                continue
+            seen.add(news_id)
+            title = unquote(slug).replace('-', ' ').strip()
+            if len(title) < 10:
+                continue
+            out.append({
+                'title': title,
+                'link': f'https://www.varzesh3.com/news/{news_id}/{slug}',
+                'pub': '',
+                'summary': '',
+            })
+            if len(out) >= max_items:
+                break
+        print(f"   WC  ✓ Varzesh3 World Cup: {len(out)} articles")
+        return out
+    except Exception as e:
+        print(f"   WC  ✗ Varzesh3 WC: {e}")
         return []
 
 
@@ -723,6 +783,18 @@ def build_news_context():
                     line += f"\n  📝 {it['summary']}"
                 parts.append(line)
 
+    # World Cup 2026 — scrape Varzesh3's dedicated league page (article URLs are
+    # in the static HTML even though cards are JS-hydrated). Pulls 5 articles;
+    # the prompt picks N of them based on tournament phase.
+    wc_items = fetch_varzesh3_worldcup(max_items=5)
+    if wc_items:
+        parts.append("\n──── منبع: Varzesh3 — صفحه جام جهانی ۲۰۲۶ ────")
+        for it in wc_items:
+            line = f"• «{it['title']}»"
+            if it['link']:
+                line += f"\n  🔗 {it['link']}"
+            parts.append(line)
+
     # khabarvarzeshi — live Persian sports feed (Varzesh3 is dead, frozen 2025-08-25)
     kv_items = fetch_khabarvarzeshi(max_items=6)
     if kv_items:
@@ -879,6 +951,18 @@ EVENING_SECTIONS = f"""**۱۰.** div.history-box — ۳ رویداد تاریخ�
 
 is_morning = (edition_en == "Morning")
 morning_or_evening_specific_sections = MORNING_SECTIONS if is_morning else EVENING_SECTIONS
+
+# World Cup section — appears between section 4 (sports) and section 5 (local).
+# Number of articles scales with tournament phase (see worldcup_article_count).
+if wc_section_enabled:
+    worldcup_section = f"""**۴ب.** section-header gold «جام جهانی ۲۰۲۶» (World Cup News)
+   ⭐ **منبع اصلی: Varzesh3 — صفحه جام جهانی ۲۰۲۶ از فهرست بالا.**
+   **تعداد مقاله امروز: دقیقاً {wc_count}** (بر اساس فاز فعلی جام جهانی).
+   هر مقاله: kicker «جام جهانی»، h2.lead، h3.deck (اختیاری)، byline-row با نام «Varzesh3» و URL واقعی از فید بالا، یک یا دو پاراگراف خلاصه.
+   مقالات کوتاه نگه دارید — هر مقاله ۲ تا ۳ جمله. هدف: مرور سریع مهم‌ترین خبرهای جام جهانی، نه پوشش عمیق.
+   اگر تیترهای کافی از Varzesh3 در فهرست بالا نیست، با تعداد موجود کفایت کنید. این بخش مکمل بخش ورزش ایران و جهان است."""
+else:
+    worldcup_section = ""  # tournament finished, skip section
 closing_tone = (
     "صبح است — لحن گرم، انگیزه‌بخش، آغاز روز. ۲ تا ۳ جمله."
     if is_morning
@@ -1073,6 +1157,8 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
    • کشتی، والیبال، بسکتبال، تکواندو — رویدادهای امروز
    **byline حتماً نام منبع واقعی (khabarvarzeshi.com یا IranWire) + URL واقعی از فهرست بالا.**
    تاریخ بازی یا رویداد باید در ۷ روز اخیر باشد. اخبار قدیمی‌تر از یک هفته ننویسید.
+
+{worldcup_section}
 
 **۵.** section-header «اخبار محلی · کوشاداسی، سوکه، آیدین»
    **دقیقاً ۳ مقاله.** ⭐ **منبع اصلی: تیترهای امروز Aydın Post, Kuşadası.gen.tr, Söke Gündem از فهرست بالا** — این سه فید زنده هستند و هر روز خبرهای متفاوت دارند. **نسخه قدیمی یا کلی ننویسید** — هر مقاله باید از تیتر واقعی یکی از این سه فید گرفته شود، با URL واقعی در byline.
