@@ -111,7 +111,11 @@ HEAD_FONTS = '''<link rel="preconnect" href="https://fonts.googleapis.com">
 # --- 3. TIMING ---
 now = datetime.datetime.now(datetime.timezone.utc)
 local_hour = (now.hour + 3) % 24  # Kusadasi is UTC+3
-is_morning = 7 <= local_hour <= 14
+# Split at noon local: anything AM local = morning edition, PM = evening.
+# Wider than the previous 7-14 window, which missed 05:00-06:00 local (what
+# the current cron fires at when GHA delivers on time) — that bug had both
+# daily runs registering as Evening for over a week.
+is_morning = local_hour < 12
 edition_en = "Morning" if is_morning else "Evening"
 edition_fa = "بامداد" if is_morning else "عصر"
 today_str = now.strftime("%Y-%m-%d")
@@ -825,6 +829,38 @@ def build_news_context():
                 line += f"\n  📝 {it['summary']}"
             parts.append(line)
 
+    # European football — BBC Champions League RSS is the cleanest UEFA feed
+    # (UEFA.com's own RSS was 404 on last probe). Turkish-team angle covered by
+    # Hürriyet Spor + Sabah, which are already in the mix.
+    eu_football = fetch_rss('https://feeds.bbci.co.uk/sport/football/champions-league/rss.xml',
+                            'BBC Champions League', max_items=5, encoding='utf-8')
+    if eu_football:
+        parts.append("\n──── منبع: BBC Champions League (فوتبال اروپا — RSS امروز) ────")
+        for it in eu_football:
+            line = f"• «{it['title']}»"
+            if it['pub']:
+                line += f"  [{it['pub']}]"
+            if it['link']:
+                line += f"\n  🔗 {it['link']}"
+            if it['summary']:
+                line += f"\n  📝 {it['summary']}"
+            parts.append(line)
+
+    # Sabah Spor — Turkish football with detailed Turkish-team + European coverage
+    sabah_items = fetch_rss('https://www.sabah.com.tr/rss/spor.xml',
+                            'Sabah Spor', max_items=5, encoding='utf-8')
+    if sabah_items:
+        parts.append("\n──── منبع: Sabah Spor (ورزش ترکیه — RSS امروز) ────")
+        for it in sabah_items:
+            line = f"• «{it['title']}»"
+            if it['pub']:
+                line += f"  [{it['pub']}]"
+            if it['link']:
+                line += f"\n  🔗 {it['link']}"
+            if it['summary']:
+                line += f"\n  📝 {it['summary']}"
+            parts.append(line)
+
     # khabarvarzeshi — live Persian sports feed (Varzesh3 is dead, frozen 2025-08-25)
     kv_items = fetch_khabarvarzeshi(max_items=6)
     if kv_items:
@@ -1226,6 +1262,25 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
    تاریخ بازی یا رویداد باید در ۷ روز اخیر باشد. اخبار قدیمی‌تر از یک هفته ننویسید.
 
 {worldcup_section}
+
+**۴ج.** section-header gold «فوتبال اروپا» (European Football)
+   ۱ مقاله در روز. ⭐ **منابع اصلی: BBC Champions League + Sabah Spor + Hürriyet Spor از فهرست بالا.**
+
+   **اولویت انتخاب مقاله (به این ترتیب):**
+   ۱. **تیم‌های ترکیه در اروپا** (Galatasaray, Fenerbahçe, Beşiktaş, Trabzonspor) در Champions League/Europa League/Conference League — نتیجه بازی، قرعه‌کشی، پیش‌نمایش، انتقال بازیکن با نام و تیم مقصد اروپایی.
+   ۲. قرعه‌کشی جدید، جدول لیگ قهرمانان، گروه‌بندی، تحلیل بازی‌های هفته.
+   ۳. اخبار مهم تیم‌های بزرگ اروپا (Real Madrid, Barcelona, PSG, Man City, Bayern, Inter, Milan, Napoli, Chelsea, Arsenal, Liverpool) با تمرکز بر بازی‌های آینده.
+
+   **کیفیت مقاله:**
+   • h2.lead: تیتر واقعی از فید (نه ترجمه ماشینی — از ترکی/انگلیسی به فارسی روان بازنویسی کنید).
+   • h3.deck: خلاصه از فید، ترجمه‌شده.
+   • ۲ پاراگراف کامل: پاراگراف ۱ خبر اصلی، پاراگراف ۲ زمینه یا تأثیر (مثلاً «Galatasaray در گروه E با PSG و Real Madrid همگروه شد»).
+   • byline-row با لینک قابل کلیک به منبع اصلی:
+     <div class="byline-row">
+       <span class="name">به نقل از <a href="[URL از فید]" target="_blank">BBC Champions League</a> یا Hürriyet Spor یا Sabah Spor، {today_str}</span>
+     </div>
+
+   **پرهیز از تکرار:** اگر خبری در بخش ۶ (ورزش محلی ترکیه) بازتاب یافته، همان خبر را در این بخش تکرار نکنید. اگر تیم ترکیه در بحث اروپایی است، در این بخش (اروپا) بنویسید و در بخش ۶ به Süper Lig یا دیگر ورزش‌های ترکیه اختصاص دهید.
 
 **۵.** section-header «اخبار محلی · کوشاداسی، سوکه، آیدین»
    **دقیقاً ۳ مقاله.** ⭐ **منبع اصلی: تیترهای امروز Aydın Post, Kuşadası.gen.tr, Söke Gündem از فهرست بالا** — این سه فید زنده هستند و هر روز خبرهای متفاوت دارند. **نسخه قدیمی یا کلی ننویسید** — هر مقاله باید از تیتر واقعی یکی از این سه فید گرفته شود، با URL واقعی در byline.
