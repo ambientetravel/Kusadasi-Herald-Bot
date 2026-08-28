@@ -2,7 +2,7 @@ name: Kusadasi Herald Automated Engine
 on:
   schedule:
     # ~5h GHA delay on AM, ~3h on PM. Pre-fire so actual lands at target local.
-    - cron: '0 2,15 * * *'
+    - cron: '0 6,16 * * *'   # 09:00 / 19:00 Kusadasi local (UTC+3)
   workflow_dispatch:
 
 jobs:
