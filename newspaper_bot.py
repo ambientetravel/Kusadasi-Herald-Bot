@@ -641,22 +641,36 @@ def fetch_iranwire(max_items=8, sports_only=False):
         items = re.findall(r'<item[^>]*>(.*?)</item>', r.text, re.DOTALL)
         items.reverse()  # IranWire ships oldest→newest; flip it
 
-        # Sports filter: positive keywords + maritime-context exclusion list to
-        # avoid matching "کشتی" when it means "ship" (Hormuz traffic news).
+        # Sports filter: positive keywords + exclusion lists.
+        # NOTE: bare "آزمون" was REMOVED — it means both "Sardar Azmoun" (the
+        # footballer) AND "exam/test". It was pulling TOEFL/Duolingo/PTE
+        # language-exam news into the sports section. Use "سردار آزمون" only.
         SPORTS_POS = [
             'استقلال ', 'پرسپولیس', 'سپاهان', 'تراکتور', 'فوتبال',
             'تیم ملی', 'فدراسیون فوتبال', 'فیفا', 'یوفا', 'جام جهانی',
             'لیگ برتر', 'لالیگا', 'سوپرلیگ', 'پریمیرلیگ', 'سری آ',
-            'بازیکن', 'گلزن', 'مربی', 'کاپیتان', 'ورزشگاه', 'استادیوم',
+            'بازیکن', 'گلزن', 'سرمربی', 'کاپیتان', 'ورزشگاه', 'استادیوم',
             'کشتی فرنگی', 'کشتی آزاد', 'والیبال', 'بسکتبال', 'وزنه‌برداری',
             'تکواندو', 'کاراته', 'دو میدانی', 'شنا قهرمانی',
-            'طارمی', 'آزمون', 'جهانبخش', 'دایی', 'علی پروین',
-            'نقل و انتقالات', 'مسابقه قهرمانی', 'بازی دوستانه',
+            'طارمی', 'سردار آزمون', 'جهانبخش', 'علی دایی', 'علی پروین',
+            'نقل و انتقالات', 'مسابقه قهرمانی', 'بازی دوستانه', 'داور لیگ',
         ]
-        SPORTS_NEG = [  # maritime / military false positives for "کشتی"
+        SPORTS_NEG = [
+            # maritime / military false positives for "کشتی" (=ship)
             'تنگه هرمز', 'سپاه پاسداران', 'بندرعباس', 'توقیف کشتی',
             'کشتی تجاری', 'کشتی نفتکش', 'کشتی توقیف', 'حمله به کشتی',
+            # language-exam false positives for "آزمون" (=exam)
+            'تافل', 'دولینگو', 'دولینگ', 'پی‌تی‌ئی', 'پی تی ئی',
+            'جی‌آر‌ای', 'جی آر ای', 'آزمون زبان', 'آزمون تافل',
+            'آزمون‌های', 'آزمون آنلاین', 'آزمون ورودی', 'آزمون استخدام',
         ]
+
+        from email.utils import parsedate_to_datetime
+        now = datetime.datetime.now(datetime.timezone.utc)
+        # For the sports section, drop anything older than 4 days — the general
+        # IranWire feed is sparse on sport, so without this it surfaces week-old
+        # items and the section reads like "same news from 3 days ago".
+        max_age_days = 4 if sports_only else 30
 
         out = []
         for item in items:
@@ -671,10 +685,19 @@ def fetch_iranwire(max_items=8, sports_only=False):
                     continue
                 if any(kw in title for kw in SPORTS_NEG):
                     continue
+            pub = extract(r'<pubDate[^>]*>(.*?)</pubDate>')
+            # Recency guard — skip stale items
+            if pub:
+                try:
+                    age = (now - parsedate_to_datetime(pub)).total_seconds() / 86400
+                    if age > max_age_days:
+                        continue
+                except Exception:
+                    pass  # unparseable date — keep the item rather than drop it
             out.append({
                 'title': title,
                 'link': extract(r'<link[^>]*>(.*?)</link>'),
-                'pub': extract(r'<pubDate[^>]*>(.*?)</pubDate>'),
+                'pub': pub,
                 'summary': extract(r'<description[^>]*>(.*?)</description>')[:280],
             })
             if len(out) >= max_items:
@@ -1248,18 +1271,22 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
    ۲ تا ۳ <article class="article">. هر مقاله: kicker, h2.lead, h3.deck, byline-row, پاراگراف‌ها (اولی با drop). حداقل یک blockquote با نام منبع. **نام شخص یا تاریخ مشخص الزامی.**
 
 **۴.** section-header gold «ورزش ایران و جهان»
-   ۱ تا ۲ مقاله. **منبع اصلی: تیترهای khabarvarzeshi و IranWire (ورزش) از فهرست بالا.**
+   ۱ تا ۲ مقاله. ⭐ **منبع اصلی و اولویت اول: khabarvarzeshi** — این فید هر روز چند بار به‌روز می‌شود و تازه‌ترین است. IranWire (ورزش) فقط مکمل است.
 
-   ⛔ **اکیداً ممنوع: استفاده از خبرگزاری Varzesh3.** فید Varzesh3 از مرداد ۱۴۰۴ به‌روزرسانی نشده و اخبار آن کاملاً قدیمی است. هرگز به Varzesh3 ارجاع ندهید.
+   ⛔ **اکیداً ممنوع: خبرگزاری Varzesh3** (فید از مرداد ۱۴۰۴ مرده است).
 
-   محتوای قابل قبول (بر اساس تیترهای **امروز** از khabarvarzeshi و IranWire):
-   • نتیجه بازی، نقل و انتقالات، یا اعلامیه باشگاه/فدراسیون با تاریخ مشخص
-   • وضعیت ستاره‌های ایرانی در لیگ‌های خارجی (طارمی، جهانبخش، آزمون)
-   • اخبار جام جهانی ۲۰۲۶ یا تیم ملی
-   • اخبار لیگ برتر ایران، استقلال، پرسپولیس، سپاهان، تراکتور
-   • کشتی، والیبال، بسکتبال، تکواندو — رویدادهای امروز
+   **قانون تازگی (مهم — این بخش قبلاً خبر ۳ روز پیش را تکرار می‌کرد):**
+   • فقط از تیترهایی استفاده کنید که تاریخشان **در ۲ روز اخیر** است. تاریخ هر تیتر در فهرست بالا کنار آن آمده (`[Sat, 05 Sep 2026 ...]`). تیتر قدیمی‌تر از ۲ روز را **کامل نادیده بگیرید**.
+   • تیترهای khabarvarzeshi تقریباً همیشه از امروز هستند — از آن‌ها شروع کنید.
+   • **هرگز همان خبری را که احتمالاً دیروز نوشته شده تکرار نکنید** — تیتر متفاوت و تازه انتخاب کنید.
+
+   محتوای قابل قبول (از تیترهای تازه):
+   • نتیجه بازی هفته جاری لیگ برتر، گلزنان، جدول
+   • نقل و انتقالات یا اعلامیه باشگاه/فدراسیون
+   • ستاره‌های ایرانی در لیگ‌های خارجی (طارمی، جهانبخش، سردار آزمون)
+   • استقلال، پرسپولیس، سپاهان، تراکتور
+   • کشتی، والیبال، بسکتبال، تکواندو
    **byline حتماً نام منبع واقعی (khabarvarzeshi.com یا IranWire) + URL واقعی از فهرست بالا.**
-   تاریخ بازی یا رویداد باید در ۷ روز اخیر باشد. اخبار قدیمی‌تر از یک هفته ننویسید.
 
 {worldcup_section}
 
