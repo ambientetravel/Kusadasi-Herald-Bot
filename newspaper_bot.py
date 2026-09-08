@@ -1426,10 +1426,29 @@ TRANSIENT_HTTP = {429, 500, 502, 503, 504}
 
 
 def _post_with_retry(url, payload, attempts=5, base_delay=20):
-    """POST with exponential backoff on transient errors (rate limits, 503, etc.)."""
+    """POST with exponential backoff on transient failures — both HTTP status
+    codes (429/5xx) AND network-level exceptions (read timeout, connection
+    reset, DNS). A read-timeout on the Gemini endpoint used to raise straight
+    through and kill the whole run (observed 2026-09-08). Now it's retried like
+    any other transient error, and returns None if all attempts fail so the
+    caller can fall through to the next model."""
     last = None
     for i in range(attempts):
-        last = requests.post(url, headers={'Content-Type': 'application/json'}, json=payload, timeout=240)
+        try:
+            last = requests.post(
+                url, headers={'Content-Type': 'application/json'},
+                json=payload, timeout=240
+            )
+        except requests.exceptions.RequestException as e:
+            # Network failure (Timeout, ConnectionError, ...) — treat as transient
+            last = None
+            if i < attempts - 1:
+                delay = base_delay * (2 ** i)
+                print(f"   Network error ({type(e).__name__}), retrying in {delay}s ({i + 1}/{attempts})...")
+                time.sleep(delay)
+                continue
+            print(f"   Network error ({type(e).__name__}) — attempts exhausted.")
+            return None
         if last.status_code == 200:
             return last
         if last.status_code not in TRANSIENT_HTTP:
@@ -1466,6 +1485,10 @@ def generate(prompt):
         print(f"   → Trying {label}...")
 
         r = _post_with_retry(url, payload)
+        if r is None:
+            last_error = "network failure (timeout/connection) after retries"
+            print(f"   ✗ {label}: {last_error} — falling through to next model")
+            continue
         if r.status_code != 200:
             last_error = f"HTTP {r.status_code}: {r.text[:300]}"
             print(f"   ✗ {label}: {last_error}")
