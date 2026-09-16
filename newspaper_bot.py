@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+import random
 import datetime
 import html as htmllib
 import requests
@@ -929,6 +930,38 @@ def build_news_context():
 NEWS_CONTEXT = build_news_context()
 
 
+# --- 4c. DETERMINISTIC SPORTS PICKS (the anti-freeze fix) ---
+# The model, given a fresh feed and told to "pick the top story", kept re-picking
+# the same marquee article for days (it has no memory of yesterday). Fix: Python
+# chooses the exact stories with a per-edition seeded shuffle so consecutive
+# editions AND consecutive days get different articles, then the prompt orders the
+# model to write EXACTLY these — no discretion, no gravitating to a favourite.
+def pick_todays_sports(n=2):
+    items = fetch_khabarvarzeshi(max_items=15)
+    if not items:
+        return []
+    rng = random.Random(f"{today_str}-{edition_en}")  # different seed every edition
+    shuffled = items[:]
+    rng.shuffle(shuffled)
+    return shuffled[:n]
+
+todays_sports = pick_todays_sports(2)
+if todays_sports:
+    _sp = ["\n──── ⭐ ورزش امروز — دقیقاً این دو خبر را بنویس (انتخاب‌شده، تکرار نکن) ────"]
+    for i, it in enumerate(todays_sports, 1):
+        _sp.append(f"{i}. «{it['title']}»")
+        if it['link']:
+            _sp.append(f"   🔗 {it['link']}")
+        if it['summary']:
+            _sp.append(f"   📝 {it['summary']}")
+    SPORTS_PICKS = "\n".join(_sp)
+    print(f"⚽ Sports picks ({edition_en}): " + " | ".join(s['title'][:40] for s in todays_sports))
+else:
+    SPORTS_PICKS = ""
+    print("⚽ Sports picks: none (khabarvarzeshi empty) — model falls back to feed")
+NEWS_CONTEXT = NEWS_CONTEXT + "\n" + SPORTS_PICKS
+
+
 # --- 5. PROMPT (asks for inner content only — saves ~5K tokens of CSS regurgitation) ---
 _memorial_note = ""
 if MEMORIAL_MODE:
@@ -1271,22 +1304,17 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
    ۲ تا ۳ <article class="article">. هر مقاله: kicker, h2.lead, h3.deck, byline-row, پاراگراف‌ها (اولی با drop). حداقل یک blockquote با نام منبع. **نام شخص یا تاریخ مشخص الزامی.**
 
 **۴.** section-header gold «ورزش ایران و جهان»
-   ۱ تا ۲ مقاله. ⭐ **منبع اصلی و اولویت اول: khabarvarzeshi** — این فید هر روز چند بار به‌روز می‌شود و تازه‌ترین است. IranWire (ورزش) فقط مکمل است.
+   **۲ مقاله — دقیقاً درباره دو خبری که در بلوک «⭐ ورزش امروز — دقیقاً این دو خبر را بنویس» بالا آمده. نه بیشتر، نه دیگری.**
 
-   ⛔ **اکیداً ممنوع: خبرگزاری Varzesh3** (فید از مرداد ۱۴۰۴ مرده است).
+   این دو خبر توسط سیستم انتخاب شده‌اند و هر نوبت متفاوت‌اند تا از تکرار جلوگیری شود. **اجازه انتخاب خبر دیگری را ندارید** — حتی اگر خبر «مهم‌تری» در فهرست می‌بینید. این قانون عمداً وضع شده چون بخش ورزش قبلاً روزها روی یک خبر ثابت گیر می‌کرد.
 
-   **قانون تازگی (مهم — این بخش قبلاً خبر ۳ روز پیش را تکرار می‌کرد):**
-   • فقط از تیترهایی استفاده کنید که تاریخشان **در ۲ روز اخیر** است. تاریخ هر تیتر در فهرست بالا کنار آن آمده (`[Sat, 05 Sep 2026 ...]`). تیتر قدیمی‌تر از ۲ روز را **کامل نادیده بگیرید**.
-   • تیترهای khabarvarzeshi تقریباً همیشه از امروز هستند — از آن‌ها شروع کنید.
-   • **هرگز همان خبری را که احتمالاً دیروز نوشته شده تکرار نکنید** — تیتر متفاوت و تازه انتخاب کنید.
+   برای هر یک از دو خبر:
+   • h2.lead: همان تیتر خبر انتخاب‌شده (روان‌سازی جزئی مجاز است، معنی ثابت).
+   • h3.deck: خلاصه (📝) همان خبر.
+   • ۲ پاراگراف که خلاصه را گسترش می‌دهد (زمینه، تیم‌ها، نتیجه، ادامه ماجرا).
+   • byline-row با لینک قابل کلیک: <span class="name">به نقل از <a href="[🔗 همان خبر]" target="_blank">khabarvarzeshi</a>، {today_str}</span>
 
-   محتوای قابل قبول (از تیترهای تازه):
-   • نتیجه بازی هفته جاری لیگ برتر، گلزنان، جدول
-   • نقل و انتقالات یا اعلامیه باشگاه/فدراسیون
-   • ستاره‌های ایرانی در لیگ‌های خارجی (طارمی، جهانبخش، سردار آزمون)
-   • استقلال، پرسپولیس، سپاهان، تراکتور
-   • کشتی، والیبال، بسکتبال، تکواندو
-   **byline حتماً نام منبع واقعی (khabarvarzeshi.com یا IranWire) + URL واقعی از فهرست بالا.**
+   ⛔ **اکیداً ممنوع: خبرگزاری Varzesh3** (فید مرده). و **هیچ خبری خارج از دو انتخاب بالا ننویسید.**
 
 {worldcup_section}
 
