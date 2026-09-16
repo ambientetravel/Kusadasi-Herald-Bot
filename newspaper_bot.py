@@ -930,36 +930,70 @@ def build_news_context():
 NEWS_CONTEXT = build_news_context()
 
 
-# --- 4c. DETERMINISTIC SPORTS PICKS (the anti-freeze fix) ---
-# The model, given a fresh feed and told to "pick the top story", kept re-picking
-# the same marquee article for days (it has no memory of yesterday). Fix: Python
-# chooses the exact stories with a per-edition seeded shuffle so consecutive
-# editions AND consecutive days get different articles, then the prompt orders the
-# model to write EXACTLY these — no discretion, no gravitating to a favourite.
-def pick_todays_sports(n=2):
-    items = fetch_khabarvarzeshi(max_items=15)
-    if not items:
+# --- 4c. DETERMINISTIC PICKS (the permanent anti-freeze fix) ---
+# ROOT CAUSE of the recurring "section X froze on the same article for days":
+# every section that told the model "pick the top story from this feed" freezes
+# eventually, because the model has NO memory of yesterday and keeps gravitating
+# to the same marquee story. Prompt wording ("don't repeat") can't fix that.
+# PERMANENT FIX: for every small-feed section, Python picks the exact stories
+# with a per-edition seeded shuffle (different every edition AND every day), and
+# the prompt orders the model to write EXACTLY those. No model discretion = no
+# freeze. Applied uniformly to Iran sports, European football, and Turkish sports.
+def pick_rotated(items, n, seed_suffix, exclude_links=None):
+    """Deterministic per-edition rotating pick — the anti-freeze primitive."""
+    exclude_links = exclude_links or set()
+    pool = [it for it in (items or []) if it.get('link') not in exclude_links]
+    if not pool:
         return []
-    rng = random.Random(f"{today_str}-{edition_en}")  # different seed every edition
-    shuffled = items[:]
+    rng = random.Random(f"{today_str}-{edition_en}-{seed_suffix}")
+    shuffled = pool[:]
     rng.shuffle(shuffled)
     return shuffled[:n]
 
-todays_sports = pick_todays_sports(2)
-if todays_sports:
-    _sp = ["\n──── ⭐ ورزش امروز — دقیقاً این دو خبر را بنویس (انتخاب‌شده، تکرار نکن) ────"]
-    for i, it in enumerate(todays_sports, 1):
-        _sp.append(f"{i}. «{it['title']}»")
-        if it['link']:
-            _sp.append(f"   🔗 {it['link']}")
-        if it['summary']:
-            _sp.append(f"   📝 {it['summary']}")
-    SPORTS_PICKS = "\n".join(_sp)
-    print(f"⚽ Sports picks ({edition_en}): " + " | ".join(s['title'][:40] for s in todays_sports))
-else:
-    SPORTS_PICKS = ""
-    print("⚽ Sports picks: none (khabarvarzeshi empty) — model falls back to feed")
-NEWS_CONTEXT = NEWS_CONTEXT + "\n" + SPORTS_PICKS
+
+def _picks_block(header, picks):
+    """Render a mandatory-picks block for injection into NEWS_CONTEXT."""
+    if not picks:
+        return ""
+    out = [f"\n──── {header} ────"]
+    for i, it in enumerate(picks, 1):
+        out.append(f"{i}. «{it['title']}»")
+        if it.get('link'):
+            out.append(f"   🔗 {it['link']}")
+        if it.get('summary'):
+            out.append(f"   📝 {it['summary']}")
+    return "\n".join(out)
+
+
+# Iran sports — 2 stories from khabarvarzeshi (fresh, ~30/day)
+todays_sports = pick_rotated(fetch_khabarvarzeshi(max_items=15), 2, "iransport")
+
+# European football — 1 story from a combined UEFA/Turkish-in-Europe pool.
+# Turkish sources listed first so the Turkish angle is favoured, rotation ensures
+# it never freezes on the same fixture.
+_eu_pool = (
+    fetch_rss('https://www.hurriyet.com.tr/rss/spor', 'Hürriyet Spor', max_items=8, encoding='utf-8')
+    + fetch_rss('https://www.sabah.com.tr/rss/spor.xml', 'Sabah Spor', max_items=8, encoding='utf-8')
+    + fetch_rss('https://feeds.bbci.co.uk/sport/football/champions-league/rss.xml',
+                'BBC Champions League', max_items=8, encoding='utf-8')
+)
+todays_eufootball = pick_rotated(_eu_pool, 1, "eufootball")
+
+# Turkish local sports — 1 story from Hürriyet, excluding whatever European
+# football already took (so the two Turkish-flavoured sections never duplicate).
+_eu_links = {it.get('link') for it in todays_eufootball}
+todays_trsport = pick_rotated(
+    fetch_rss('https://www.hurriyet.com.tr/rss/spor', 'Hürriyet Spor', max_items=12, encoding='utf-8'),
+    1, "trsport", exclude_links=_eu_links)
+
+NEWS_CONTEXT = NEWS_CONTEXT + "\n" + "\n".join(filter(None, [
+    _picks_block("⭐ ورزش ایران امروز — دقیقاً این دو خبر را بنویس (انتخاب‌شده، تکرار نکن)", todays_sports),
+    _picks_block("⭐ فوتبال اروپا امروز — دقیقاً این خبر را بنویس (انتخاب‌شده، تکرار نکن)", todays_eufootball),
+    _picks_block("⭐ ورزش محلی ترکیه امروز — دقیقاً این خبر را بنویس (انتخاب‌شده، تکرار نکن)", todays_trsport),
+]))
+print(f"⚽ Iran sports: {' | '.join(s['title'][:35] for s in todays_sports) or 'none'}")
+print(f"⚽ Euro football: {(todays_eufootball[0]['title'][:45] if todays_eufootball else 'none')}")
+print(f"⚽ TR sports: {(todays_trsport[0]['title'][:45] if todays_trsport else 'none')}")
 
 
 # --- 5. PROMPT (asks for inner content only — saves ~5K tokens of CSS regurgitation) ---
@@ -1319,23 +1353,13 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
 {worldcup_section}
 
 **۴ج.** section-header gold «فوتبال اروپا» (European Football)
-   ۱ مقاله در روز. ⭐ **منابع اصلی: BBC Champions League + Sabah Spor + Hürriyet Spor از فهرست بالا.**
-
-   **اولویت انتخاب مقاله (به این ترتیب):**
-   ۱. **تیم‌های ترکیه در اروپا** (Galatasaray, Fenerbahçe, Beşiktaş, Trabzonspor) در Champions League/Europa League/Conference League — نتیجه بازی، قرعه‌کشی، پیش‌نمایش، انتقال بازیکن با نام و تیم مقصد اروپایی.
-   ۲. قرعه‌کشی جدید، جدول لیگ قهرمانان، گروه‌بندی، تحلیل بازی‌های هفته.
-   ۳. اخبار مهم تیم‌های بزرگ اروپا (Real Madrid, Barcelona, PSG, Man City, Bayern, Inter, Milan, Napoli, Chelsea, Arsenal, Liverpool) با تمرکز بر بازی‌های آینده.
-
-   **کیفیت مقاله:**
-   • h2.lead: تیتر واقعی از فید (نه ترجمه ماشینی — از ترکی/انگلیسی به فارسی روان بازنویسی کنید).
-   • h3.deck: خلاصه از فید، ترجمه‌شده.
-   • ۲ پاراگراف کامل: پاراگراف ۱ خبر اصلی، پاراگراف ۲ زمینه یا تأثیر (مثلاً «Galatasaray در گروه E با PSG و Real Madrid همگروه شد»).
-   • byline-row با لینک قابل کلیک به منبع اصلی:
-     <div class="byline-row">
-       <span class="name">به نقل از <a href="[URL از فید]" target="_blank">BBC Champions League</a> یا Hürriyet Spor یا Sabah Spor، {today_str}</span>
-     </div>
-
-   **پرهیز از تکرار:** اگر خبری در بخش ۶ (ورزش محلی ترکیه) بازتاب یافته، همان خبر را در این بخش تکرار نکنید. اگر تیم ترکیه در بحث اروپایی است، در این بخش (اروپا) بنویسید و در بخش ۶ به Süper Lig یا دیگر ورزش‌های ترکیه اختصاص دهید.
+   **۱ مقاله — دقیقاً درباره خبری که در بلوک «⭐ فوتبال اروپا امروز — دقیقاً این خبر را بنویس» بالا آمده. خبر دیگری انتخاب نکنید.**
+   این خبر توسط سیستم انتخاب شده و هر نوبت متفاوت است تا این بخش گیر نکند (قبلاً روی یک بازی ثابت گیر می‌کرد).
+   • h2.lead: تیتر همان خبر (از ترکی/انگلیسی به فارسی روان بازنویسی کنید، معنی ثابت).
+   • h3.deck: خلاصه (📝) همان خبر، ترجمه‌شده.
+   • ۲ پاراگراف کامل: پاراگراف ۱ خبر اصلی؛ پاراگراف ۲ زمینه/تأثیر.
+   • byline-row با لینک قابل کلیک: <span class="name">به نقل از <a href="[🔗 همان خبر]" target="_blank">[نام منبع]</a>، {today_str}</span>
+   اگر بلوک انتخاب خالی بود، این بخش را حذف کنید.
 
 **۵.** section-header «اخبار محلی · کوشاداسی، سوکه، آیدین»
    **دقیقاً ۳ مقاله.** ⭐ **منبع اصلی: تیترهای امروز Aydın Post, Kuşadası.gen.tr, Söke Gündem از فهرست بالا** — این سه فید زنده هستند و هر روز خبرهای متفاوت دارند. **نسخه قدیمی یا کلی ننویسید** — هر مقاله باید از تیتر واقعی یکی از این سه فید گرفته شود، با URL واقعی در byline.
@@ -1367,19 +1391,13 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
      جستجو: «Efes Antik Kenti» OR «Kuşadası kültür sanat» OR «Aydın etkinlik».
 
 **۶.** section-header gold «ورزش محلی · ترکیه»
-   ۱ مقاله. ⭐ **منبع اصلی: تیترهای امروز Hürriyet Spor از فهرست بالا** (فید زنده، روزانه چندین به‌روزرسانی).
-
-   ⛔ **اکیداً ممنوع: خبرهای تیم ملی ترکیه در جام جهانی ۲۰۲۶.** اگر بخش ۴ب (جام جهانی) فعال است، خبرهای تیم ملی ترکیه در WC به آن بخش می‌روند، نه اینجا. این بخش فقط برای محتوای **غیر-جام-جهانی** ترکیه است.
-
-   محتوای قابل قبول:
-   • نتیجه بازی Süper Lig (Galatasaray, Fenerbahçe, Beşiktaş, Trabzonspor) با امتیاز و گلزن
-   • وضعیت جدول لیگ یا تیم در رقابت‌های اروپایی (UEFA, Champions League, Europa League)
-   • پیش‌نمایش بازی آخر هفته با تاریخ و ساعت
-   • نقل و انتقالات تابستانی با نام بازیکن
-   • والیبال، بسکتبال، یا ورزش‌های دیگر باشگاهی ترکیه
-
-   **byline حتماً Hürriyet Spor + URL واقعی از فهرست بالا.**
-   اگر تنها خبرهای Hürriyet Spor درباره جام جهانی هستند، یک محتوای جایگزین از Süper Lig یا UEFA استفاده کنید (یا از Google Search استفاده کنید).
+   **۱ مقاله — دقیقاً درباره خبری که در بلوک «⭐ ورزش محلی ترکیه امروز — دقیقاً این خبر را بنویس» بالا آمده. خبر دیگری انتخاب نکنید.**
+   این خبر سیستمی انتخاب شده، متفاوت از بخش فوتبال اروپا، و هر نوبت عوض می‌شود تا گیر نکند.
+   • h2.lead: تیتر همان خبر (بازنویسی روان فارسی).
+   • h3.deck: خلاصه (📝) همان خبر.
+   • ۲ پاراگراف: خبر اصلی + زمینه.
+   • byline-row با لینک: <span class="name">به نقل از <a href="[🔗 همان خبر]" target="_blank">Hürriyet Spor</a>، {today_str}</span>
+   اگر بلوک انتخاب خالی بود، این بخش را حذف کنید.
 
 **۷.** section-header blue «گزارش از رم»
    **دقیقاً ۲ مقاله. فوتبال اکیداً ممنوع.**
