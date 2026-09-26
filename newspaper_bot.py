@@ -452,7 +452,14 @@ HTML_TAIL = """
 # These give the model verified ground truth instead of forcing it to rely on
 # Gemini's flaky search grounding for Iran news.
 
-UA_HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; KusadasiHeraldBot/1.0)'}
+# Browser UA — some feeds (Söke Ekspres) 403 a bot UA from datacenter/CI IPs
+# but serve fine to a browser UA. Browser UAs are broadly MORE accepted, so this
+# is the safe default for every feed.
+UA_HEADERS = {
+    'User-Agent': ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+                   'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'),
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+}
 
 
 def _clean(s):
@@ -1012,15 +1019,36 @@ todays_trsport = pick_rotated(
 # a week-old power-cut and its cultural sub-article defaulted to "no update".
 # Recency-filter to ≤3 days, then rotate-pick 3 from the combined local pool so
 # there's ALWAYS three real fresh items to write (kills the placeholder).
-# Söke Ekspres + Aydın Post are Aydın-province (Kuşadası/Söke/Aydın) — the bulk of
-# the pool. Ege de Sonsöz is İzmir-heavy but the only one with regular cultural
-# items, so keep it a minority (fewer items) for the occasional culture/event pick.
-_local_pool = (
+# Söke Ekspres + Aydın Post are Aydın-province; Ege de Sonsöz is İzmir-heavy but
+# the only one with regular cultural items. These feeds ALSO carry national/
+# international stories (Germany police, fund probes, Hormuz) — a place-name
+# filter keeps the section genuinely local (Kuşadası/Söke/Aydın), not national.
+_LOCAL_PLACES = [
+    'kuşadası', 'kusadası', 'kusadasi', 'söke', 'soke', 'aydın', 'aydin', 'efes',
+    'selçuk', 'selcuk', 'didim', 'nazilli', 'kuyucak', 'germencik', 'incirliova',
+    'büyük menderes', 'davutlar', 'çine', 'koçarlı', 'karacasu', 'buharkent',
+]
+def _local_only(items):
+    out = []
+    for it in (items or []):
+        blob = (it.get('title', '') + ' ' + it.get('summary', '')).lower()
+        if any(k in blob for k in _LOCAL_PLACES):
+            out.append(it)
+    return out
+
+_fresh_local = (
     _fresh(fetch_rss('https://www.sokeekspres.com/rss', 'Söke Ekspres', max_items=15, encoding='utf-8'), 3)
-    + _fresh(fetch_rss('https://www.aydinpost.com/rss', 'Aydın Post', max_items=15, encoding='utf-8'), 3)
-    + _fresh(fetch_rss('https://www.egedesonsoz.com/rss', 'Ege de Sonsöz', max_items=5, encoding='utf-8'), 3)
+    + _fresh(fetch_rss('https://www.aydinpost.com/rss', 'Aydın Post', max_items=20, encoding='utf-8'), 3)
+    + _fresh(fetch_rss('https://www.egedesonsoz.com/rss', 'Ege de Sonsöz', max_items=8, encoding='utf-8'), 3)
 )
+_local_pool = _local_only(_fresh_local)
 todays_local = pick_rotated(_local_pool, 3, "local")
+# Safety net: if fewer than 3 genuinely-local items today, top up from the fresh
+# pool so the section still has 3 (never a "no news" placeholder).
+if len(todays_local) < 3:
+    _seen = {x.get('link') for x in todays_local}
+    todays_local += pick_rotated([it for it in _fresh_local if it.get('link') not in _seen],
+                                 3 - len(todays_local), "localfill")
 
 NEWS_CONTEXT = NEWS_CONTEXT + "\n" + "\n".join(filter(None, [
     _picks_block("⭐ ورزش ایران امروز — دقیقاً این دو خبر را بنویس (انتخاب‌شده، تکرار نکن)", todays_sports),
