@@ -818,12 +818,16 @@ def build_news_context():
                 line += f"\n  📝 {it['summary']}"
             parts.append(line)
 
-    # Local Turkish feeds — kills the "Kuşadası tourism season" recycled placeholder.
-    # All three checked live as of May 2026 with daily-or-faster updates.
+    # Local Turkish feeds. NOTE (2026-09-26): dropped two dead sources —
+    # Kuşadası.gen.tr went stale (6+ day-old items + SEO evergreen junk like
+    # "Where is Starbucks") and was the source of the repeating Sep-19 power-cut;
+    # Söke Gündem serves 13-day-old ENGLISH template demo content ("Microsoft
+    # Band Review", "Laptop with 128-bit Processor") — it's a dead template site.
+    # Replaced with Söke Ekspres and Ege de Sonsöz, both live/fresh, verified.
     local_sources = [
-        ('Aydın Post',        'https://www.aydinpost.com/rss'),
-        ('Kuşadası.gen.tr',   'https://www.kusadasi.gen.tr/rss'),
-        ('Söke Gündem',       'https://www.sokegundem.com/rss'),
+        ('Aydın Post',    'https://www.aydinpost.com/rss'),
+        ('Söke Ekspres',  'https://www.sokeekspres.com/rss'),
+        ('Ege de Sonsöz', 'https://www.egedesonsoz.com/rss'),
     ]
     for name, url in local_sources:
         items = fetch_rss(url, name, max_items=5, encoding='utf-8')
@@ -951,6 +955,24 @@ def pick_rotated(items, n, seed_suffix, exclude_links=None):
     return shuffled[:n]
 
 
+def _fresh(items, max_days=3):
+    """Drop feed items older than max_days. Small local feeds carry SEO-evergreen
+    and week-old items that the model latches onto (the Sep-19 power-cut bug)."""
+    from email.utils import parsedate_to_datetime
+    now = datetime.datetime.now(datetime.timezone.utc)
+    out = []
+    for it in (items or []):
+        pub = it.get('pub', '')
+        if pub:
+            try:
+                if (now - parsedate_to_datetime(pub)).days > max_days:
+                    continue
+            except Exception:
+                pass  # unparseable date — keep rather than wrongly drop
+        out.append(it)
+    return out
+
+
 def _picks_block(header, picks):
     """Render a mandatory-picks block for injection into NEWS_CONTEXT."""
     if not picks:
@@ -986,11 +1008,27 @@ todays_trsport = pick_rotated(
     fetch_rss('https://www.hurriyet.com.tr/rss/spor', 'Hürriyet Spor', max_items=12, encoding='utf-8'),
     1, "trsport", exclude_links=_eu_links)
 
+# Local Kuşadası/Söke/Aydın — 3 fresh stories, Python-picked. Section 5 froze on
+# a week-old power-cut and its cultural sub-article defaulted to "no update".
+# Recency-filter to ≤3 days, then rotate-pick 3 from the combined local pool so
+# there's ALWAYS three real fresh items to write (kills the placeholder).
+# Söke Ekspres + Aydın Post are Aydın-province (Kuşadası/Söke/Aydın) — the bulk of
+# the pool. Ege de Sonsöz is İzmir-heavy but the only one with regular cultural
+# items, so keep it a minority (fewer items) for the occasional culture/event pick.
+_local_pool = (
+    _fresh(fetch_rss('https://www.sokeekspres.com/rss', 'Söke Ekspres', max_items=15, encoding='utf-8'), 3)
+    + _fresh(fetch_rss('https://www.aydinpost.com/rss', 'Aydın Post', max_items=15, encoding='utf-8'), 3)
+    + _fresh(fetch_rss('https://www.egedesonsoz.com/rss', 'Ege de Sonsöz', max_items=5, encoding='utf-8'), 3)
+)
+todays_local = pick_rotated(_local_pool, 3, "local")
+
 NEWS_CONTEXT = NEWS_CONTEXT + "\n" + "\n".join(filter(None, [
     _picks_block("⭐ ورزش ایران امروز — دقیقاً این دو خبر را بنویس (انتخاب‌شده، تکرار نکن)", todays_sports),
     _picks_block("⭐ فوتبال اروپا امروز — دقیقاً این خبر را بنویس (انتخاب‌شده، تکرار نکن)", todays_eufootball),
     _picks_block("⭐ ورزش محلی ترکیه امروز — دقیقاً این خبر را بنویس (انتخاب‌شده، تکرار نکن)", todays_trsport),
+    _picks_block("⭐ اخبار محلی امروز (کوشاداسی/سوکه/آیدین) — دقیقاً این ۳ خبر را بنویس (تازه، تکرار نکن)", todays_local),
 ]))
+print(f"📍 Local picks: {' | '.join(s['title'][:30] for s in todays_local) or 'none'}")
 print(f"⚽ Iran sports: {' | '.join(s['title'][:35] for s in todays_sports) or 'none'}")
 print(f"⚽ Euro football: {(todays_eufootball[0]['title'][:45] if todays_eufootball else 'none')}")
 print(f"⚽ TR sports: {(todays_trsport[0]['title'][:45] if todays_trsport else 'none')}")
@@ -1362,33 +1400,18 @@ placeholder **بهتر از ساختن خبر است.** هرگز با ساختن
    اگر بلوک انتخاب خالی بود، این بخش را حذف کنید.
 
 **۵.** section-header «اخبار محلی · کوشاداسی، سوکه، آیدین»
-   **دقیقاً ۳ مقاله.** ⭐ **منبع اصلی: تیترهای امروز Aydın Post, Kuşadası.gen.tr, Söke Gündem از فهرست بالا** — این سه فید زنده هستند و هر روز خبرهای متفاوت دارند. **نسخه قدیمی یا کلی ننویسید** — هر مقاله باید از تیتر واقعی یکی از این سه فید گرفته شود، با URL واقعی در byline.
+   **دقیقاً ۳ مقاله — دقیقاً درباره سه خبری که در بلوک «⭐ اخبار محلی امروز» بالا آمده. خبر دیگری انتخاب نکنید و ترتیبشان را نگه دارید.**
 
-   محتوای قابل قبول بسیار وسیع است:
+   این سه خبر توسط سیستم انتخاب شده‌اند (تازه، ≤۳ روز، هر نوبت متفاوت) تا این بخش گیر نکند. قبلاً روی خبر قدیمی «قطع برق ۱۹ سپتامبر» گیر کرده بود و بخش فرهنگی «خبری موجود نیست» می‌نوشت — **هر دو اکیداً ممنوع**.
 
-   • مقاله ۵.۱ — خبری از **سوکه** یا منطقه نزدیک سوکه:
-     - اعلامیه شهرداری Söke یا کایماکام
-     - رویداد بازار، فستیوال، یا کشاورزی فصلی (پنبه، انجیر، زیتون)
-     - گزارش از کارگاه‌های صنایع دستی محلی
-     - تحول راه/زیرساخت با نام پیمانکار
-     - اخبار آبیاری، آب، یا محیط زیست رودخانه Büyük Menderes
-     جستجو: «Söke belediyesi» OR «Söke haberleri» OR «Aydın Söke».
+   ⛔ **هرگز ننویسید «خبر برجسته‌ای موجود نیست».** همیشه هر سه خبر انتخاب‌شده را بنویسید — این‌ها خبرهای واقعی و تازه هستند.
 
-   • مقاله ۵.۲ — خبر **عمومی کوشاداسی** (غیر فرهنگی):
-     - بندر کوشاداسی: شماره و نوع کشتی‌های کروز پهلوگرفته با نام و تاریخ
-     - اعلامیه شهرداری کوشاداسی یا فرماندار آیدین
-     - حادثه، گزارش پلیس، اطلاعیه ترافیک
-     - آمار گردشگری ماه گذشته با عدد دقیق
-     - اخبار توسعه (هتل جدید، مرکز خرید، پروژه)
-     جستجو: «Kuşadası belediyesi» OR «Kuşadası limanı» OR «Aydın Post Kuşadası».
-
-   • مقاله ۵.۳ — خبر **فرهنگی کوشاداسی یا منطقه افسوس**:
-     - رویداد در آمفی‌تئاتر افسوس (تور، نمایش، کنسرت) با تاریخ مشخص
-     - حفاری یا کشف باستان‌شناسی در افسوس یا منطقه
-     - کنسرت یا نمایشگاه در کوشاداسی یا نزدیک
-     - رستوران یا کافه جدید با نام و موقعیت
-     - فستیوال محلی (رویداد ماهانه/فصلی) با تاریخ
-     جستجو: «Efes Antik Kenti» OR «Kuşadası kültür sanat» OR «Aydın etkinlik».
+   برای هر یک از سه خبر:
+   • article-kicker: موضوع کوتاه (مثلاً «سوکه»، «آیدین»، «فرهنگ و رویداد»).
+   • h2.lead: تیتر همان خبر، از ترکی به فارسی روان بازنویسی شده (معنی ثابت).
+   • h3.deck: خلاصه (📝) همان خبر، ترجمه‌شده.
+   • ۲ پاراگراف: خبر اصلی + زمینه محلی. اگر خبر درباره رویداد/فستیوال/نمایشگاه/کنسرت/باستان‌شناسی است، آن را به‌عنوان مقاله «فرهنگی و هنری» قاب بگیرید.
+   • byline-row با لینک قابل کلیک: <span class="name">به نقل از <a href="[🔗 همان خبر]" target="_blank">[نام منبع محلی]</a>، {today_str}</span>
 
 **۶.** section-header gold «ورزش محلی · ترکیه»
    **۱ مقاله — دقیقاً درباره خبری که در بلوک «⭐ ورزش محلی ترکیه امروز — دقیقاً این خبر را بنویس» بالا آمده. خبر دیگری انتخاب نکنید.**
