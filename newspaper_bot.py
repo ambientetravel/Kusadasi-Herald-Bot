@@ -559,7 +559,7 @@ def fetch_varzesh3_worldcup(max_items=3):
     just the dashed slug, which produced thin filler articles before.
 
     Varzesh3's RSS is frozen (2025-08-25); this page is the only live source."""
-    url = ('https://www.varzesh3.com/football/league/28/'
+    url = ('https://www.varzesh3.ir/football/league/28/'
            '%D8%AC%D8%A7%D9%85-%D8%AC%D9%87%D8%A7%D9%86%DB%8C')
     try:
         from urllib.parse import unquote
@@ -586,7 +586,7 @@ def fetch_varzesh3_worldcup(max_items=3):
         # Enrich each URL with proper og: meta — ~5 quick fetches in series
         out = []
         for news_id, slug, slug_title in url_list:
-            article_url = f'https://www.varzesh3.com/news/{news_id}/{slug}'
+            article_url = f'https://www.varzesh3.ir/news/{news_id}/{slug}'
             real_title, real_desc = _fetch_v3_meta(article_url)
             out.append({
                 'title': real_title or slug_title,
