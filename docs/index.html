@@ -1,4 +1,361 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>کوشاداسی هرالد سان</title></head>
-<body style="font-family:sans-serif;text-align:center;padding:3rem">در حال آماده‌سازی نخستین نسخه…</body></html>
+<meta name="theme-color" content="#d92020">
+<title>روزنامه کوشاداسی هرالد سان — عصر 2026-11-17</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#faf6ea;--paper-dark:#efe8d0;--ink:#111;--ink-soft:#2a2520;--faded:#706a5e;--red:#d92020;--red-dark:#a81515;--green:#2d6a3a;--gold:#b8860b;--blue:#1e3a5f;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{background:linear-gradient(#3a2e24,#1a1612);font-family:'Vazirmatn','Noto Naskh Arabic',Tahoma,sans-serif;color:var(--ink);direction:rtl;padding:16px 8px;min-height:100vh;line-height:1.75;}
+.paper{max-width:540px;margin:0 auto;background:var(--paper);padding:22px 24px 36px;box-shadow:0 6px 24px rgba(0,0,0,0.4);background-image:radial-gradient(rgba(0,0,0,0.018) 1px,transparent 1px),radial-gradient(rgba(0,0,0,0.014) 1px,transparent 1px);background-size:18px 18px,11px 11px;background-position:0 0,9px 9px;}
+.masthead{border-bottom:4px double var(--ink);padding-bottom:10px;margin-bottom:12px;}
+.top-line{display:flex;justify-content:space-between;font-size:10px;letter-spacing:0.3px;color:var(--faded);padding-bottom:6px;border-bottom:1px solid var(--paper-dark);}
+.masthead-block{position:relative;text-align:center;padding:8px 0 4px;display:flex;align-items:flex-end;justify-content:center;gap:8px;}
+.roozname-label{background:var(--red);color:#fff;font-weight:700;font-size:13px;padding:5px 10px;letter-spacing:0.5px;writing-mode:vertical-rl;transform:rotate(180deg);align-self:stretch;display:flex;align-items:center;justify-content:center;border-radius:2px;}
+.masthead-logo{font-family:'Vazirmatn',sans-serif;font-size:60px;font-weight:900;color:var(--red);line-height:0.95;letter-spacing:-1.5px;text-shadow:1px 1px 0 rgba(0,0,0,0.06);}
+.english-sub{text-align:center;font-family:'Amiri',serif;font-style:italic;font-size:11px;color:var(--faded);margin-top:3px;letter-spacing:0.5px;}
+.date-strip{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:6px 4px;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);font-size:11px;font-weight:600;}
+.edition{background:var(--ink);color:var(--paper);padding:3px 10px;letter-spacing:0.5px;}
+.issue{color:var(--faded);}
+.teaser-bar{background:var(--paper-dark);padding:8px 10px;margin-bottom:14px;font-size:11px;line-height:1.7;border-right:3px solid var(--red);}
+.teaser-bar strong{color:var(--red);font-weight:700;margin-left:4px;}
+.article{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--paper-dark);}
+.article:last-child{border-bottom:none;}
+.article-kicker{font-size:10px;font-weight:700;color:var(--red);letter-spacing:1px;margin-bottom:4px;}
+.article h2.lead{font-size:24px;font-weight:800;color:var(--ink);line-height:1.3;margin-bottom:6px;}
+.article h2.sub-lead{font-size:17px;font-weight:700;color:var(--ink);line-height:1.35;margin-bottom:5px;}
+.article h3.deck{font-family:'Amiri',serif;font-size:13px;font-style:italic;color:var(--ink-soft);font-weight:400;line-height:1.6;margin-bottom:10px;}
+.byline-row{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--faded);padding:6px 0;border-top:1px solid var(--paper-dark);border-bottom:1px solid var(--paper-dark);margin-bottom:10px;flex-wrap:wrap;}
+.byline-row .headshot{width:22px;height:22px;background:var(--red);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;}
+.byline-row .name{font-weight:700;color:var(--ink);}
+.article p{font-size:13.5px;line-height:1.85;text-align:justify;margin-bottom:8px;color:var(--ink-soft);}
+.article p .drop{font-size:28px;font-weight:800;color:var(--red);float:right;line-height:0.9;margin:4px 0 0 6px;font-family:'Amiri',serif;}
+blockquote{margin:10px 0;padding:8px 12px;border-right:3px solid var(--red);background:var(--paper-dark);font-family:'Amiri',serif;font-style:italic;font-size:13px;color:var(--ink-soft);}
+.section-header{background:var(--ink);color:var(--paper);padding:6px 10px;margin:18px 0 12px;font-size:12px;font-weight:700;letter-spacing:1px;text-align:center;}
+.section-header::before,.section-header::after{content:"\2605";margin:0 6px;color:var(--red);}
+.section-header.red{background:var(--red);}
+.section-header.blue{background:var(--blue);}
+.section-header.green{background:var(--green);}
+.section-header.gold{background:var(--gold);color:var(--ink);}
+.box{background:#fff;border:1px solid var(--paper-dark);padding:10px 12px;margin:12px 0;font-size:12px;line-height:1.75;}
+.box-title{font-weight:800;color:var(--red);font-size:13px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px dashed var(--paper-dark);}
+.box-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dotted #e5e0d0;font-size:12px;}
+.box-row:last-child{border-bottom:none;}
+.box-row .value{font-weight:700;}
+.up{color:var(--red);}
+.down{color:var(--green);}
+.same{color:var(--faded);}
+.weather-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:12px 0;}
+.weather-cell{background:linear-gradient(180deg,#fff,var(--paper-dark));border:1px solid var(--paper-dark);padding:8px 4px;text-align:center;font-size:11px;}
+.weather-cell .day{font-weight:700;color:var(--red);font-size:11px;margin-bottom:3px;}
+.weather-cell .temp{font-size:18px;font-weight:800;color:var(--ink);}
+.weather-cell .cond{font-size:10px;color:var(--faded);margin-top:2px;}
+.city-weather{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin:8px 0;}
+.city-weather .cell{background:var(--paper-dark);padding:6px 4px;text-align:center;font-size:11px;}
+.city-weather .city-name{font-weight:700;color:var(--red);font-size:10px;}
+.city-weather .city-temp{font-size:16px;font-weight:800;}
+.recipe-box{background:#fff;border:2px solid var(--green);padding:12px 14px;margin:14px 0;}
+.recipe-title{font-size:17px;font-weight:800;color:var(--green);text-align:center;margin-bottom:4px;padding-bottom:6px;border-bottom:2px dashed var(--green);}
+.recipe-heading{font-weight:800;color:var(--green);margin-top:8px;margin-bottom:4px;font-size:13px;}
+.recipe-text{font-size:12.5px;line-height:1.75;color:var(--ink-soft);}
+.migros-box{background:#fff8e1;border:2px dashed var(--gold);padding:10px 12px;margin:14px 0;}
+.migros-title{text-align:center;font-weight:800;color:var(--gold);font-size:14px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px dotted var(--gold);}
+.migros-item{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px dotted #e5d8a5;}
+.migros-item:last-child{border-bottom:none;}
+.migros-total{margin-top:6px;padding-top:6px;border-top:2px solid var(--gold);display:flex;justify-content:space-between;font-weight:800;color:var(--gold);font-size:13px;}
+.health-tip{background:linear-gradient(135deg,#f0f7ee,#e0eee4);border-right:4px solid var(--green);padding:10px 12px;margin:12px 0;}
+.health-title{font-weight:800;color:var(--green);font-size:13px;margin-bottom:4px;}
+.health-text{font-size:12px;line-height:1.7;color:var(--ink-soft);}
+.poetry-box{background:linear-gradient(135deg,#f4ecdf,#eadfc6);border-right:4px solid var(--gold);padding:14px 16px;margin:14px 0;text-align:center;}
+.poetry-title{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:1.5px;margin-bottom:6px;}
+.poetry-verses{font-family:'Amiri',serif;font-size:15px;line-height:2;color:var(--ink);margin:8px 0;direction:rtl;}
+.poetry-translation{font-size:12px;color:var(--ink-soft);font-style:italic;margin-top:6px;line-height:1.7;}
+.poetry-attribution{font-size:11px;color:var(--faded);margin-top:8px;font-weight:600;letter-spacing:0.5px;}
+.turkish-word{background:linear-gradient(135deg,#fff5f5,#ffe8e8);border:1px solid var(--red);padding:10px 12px;margin:12px 0;text-align:center;}
+.turkish-title{font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px;}
+.turkish-main{font-size:22px;font-weight:800;color:var(--ink);margin:4px 0;}
+.turkish-meaning{font-size:13px;color:var(--ink-soft);}
+.turkish-ex{font-size:11px;font-style:italic;color:var(--faded);margin-top:4px;}
+.history-box{background:#f5f0e0;border-right:3px solid var(--gold);padding:10px 12px;margin:12px 0;font-size:12px;}
+.history-title{font-weight:800;color:var(--gold);font-size:13px;margin-bottom:6px;}
+.history-item{padding:4px 0;border-bottom:1px dotted #e5d8a5;line-height:1.7;}
+.history-item:last-child{border-bottom:none;}
+.history-year{font-weight:800;color:var(--red);margin-left:6px;}
+.closing{margin-top:22px;padding:14px 12px;background:linear-gradient(135deg,var(--red),var(--red-dark));color:#fff;text-align:center;border-radius:4px;}
+.closing-title{font-size:16px;font-weight:800;margin-bottom:6px;}
+.closing-text{font-size:12px;line-height:1.8;font-family:'Amiri',serif;font-style:italic;}
+.footer{margin-top:18px;padding-top:10px;border-top:3px double var(--ink);text-align:center;font-size:9px;color:var(--faded);line-height:1.7;}
+.footer .colophon{font-family:'Amiri',serif;font-style:italic;margin:6px 0;}
+</style>
+
+</head>
+<body>
+<div class="paper">
+<div class="masthead">
+  <div class="top-line"><span>کوشاداسی · ساحل اژه · رم · بارسلونا</span><span>★ شماره [N] · سال یکم</span></div>
+  <div class="masthead-block">
+    <div class="roozname-label">روزنامه</div>
+    <div class="masthead-logo">کوشاداسی هرالد سان</div>
+  </div>
+  <div class="english-sub">— The Kusadasi Herald Sun · Persian Evening Edition —</div>
+  <div class="date-strip">
+    <span class="edition">عصر</span>
+    <span>سه‌شنبه، ۲۶ آبان ۱۴۰۵</span>
+    <span class="issue">2026-11-17</span>
+  </div>
+</div>
+
+<div class="teaser-bar"><strong>◂ در این شماره ◂</strong> حمله آمریکا به قشم · اعتراضات در ایلام · رقابت بر سر ریاست فیفا · لیگ برتر ترکیه · پل کریمه · ممنوعیت اجتماعی برای کودکان در ایتالیا</div>
+
+<div class="section-header red">گزارش جهانی · ایران</div>
+
+<article class="article">
+  <div class="article-kicker">تحولات منطقه‌ای</div>
+  <h2 class="lead">استانداری هرمزگان: حمله آمریکا به قشم خسارتی نداشت</h2>
+  <h3 class="deck">استانداری هرمزگان اعلام کرد که «حمله آمریکا به نقاطی در محدوده قشم، خسارتی به مناطق مسکونی، تجاری و زیرساختی وارد نکرده است.»</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.bbc.co.uk/persian/live/cj4gnx0vr1ewt?at_medium=RSS&at_campaign=rss" target="_blank">BBC Persian</a>، ۱۷ نوامبر ۲۰۲۶</span>
+  </div>
+  <p class="drop">استانداری هرمزگان امروز سه‌شنبه اعلام کرد که حملات منتسب به آمریکا به نقاطی در جزیره قشم هیچ‌گونه خسارتی به مناطق مسکونی، تجاری و زیرساختی وارد نکرده است. این اطلاعیه در حالی منتشر می‌شود که رسانه‌های داخلی ایران ساعاتی پیش از شنیده شدن صدای انفجار و دیده شدن ستون دود در این منطقه خبر داده بودند.</p>
+  <p>هنوز جزئیات بیشتری درباره ماهیت این حملات یا اهداف دقیق آن‌ها اعلام نشده است. این حادثه در بحبوحه تنش‌های فزاینده در منطقه و درگیری‌های جاری در ایران رخ می‌دهد و نگرانی‌ها را در مورد گسترش دامنه درگیری‌ها افزایش داده است. پیش از این نیز گزارش‌هایی از فعالیت‌های نظامی در نزدیکی آب‌های ایران منتشر شده بود.</p>
+  <blockquote cite="https://www.bbc.co.uk/persian/live/cj4gnx0vr1ewt?at_medium=RSS&at_campaign=rss">
+    <p>استانداری هرمزگان گفت که «حمله آمریکا به نقاطی در محدوده قشم، خسارتی به مناطق مسکونی، تجاری و زیرساختی وارد نکرد.»</p>
+  </blockquote>
+  <p>در تحلیل خبر: این گونه حملات و واکنش‌های رسمی، در بستر تنش‌های جاری میان ایران و قدرت‌های غربی، می‌تواند به عنوان نشانه‌ای از تلاش برای حفظ برتری نظامی یا ارسال پیام‌های سیاسی تلقی شود. عدم گزارش خسارت قابل توجه از سوی مقامات ایرانی ممکن است تلاشی برای کاهش نگرانی‌های عمومی یا جلوگیری از تشدید تنش‌ها باشد، در حالی که اصل رخداد بر ادامه وضعیت ناپایدار منطقه صحه می‌گذارد.</p>
+</article>
+
+<article class="article">
+  <div class="article-kicker">حوادث و اعتراضات داخلی</div>
+  <h2 class="lead">واژگونی اتوبوس در ایلام؛ تجمع اعتراضی مردم در آبدانان</h2>
+  <h3 class="deck">پس از واژگونی مرگبار اتوبوس حامل کارکنان شرکت نفت در آبدانان، گزارش‌ها و ویدئوهای منتشرشده در شبکه‌های اجتماعی از تجمع اعتراضی مردم این شهر خبر می‌دهند.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.bbc.com/persian/articles/cq8j48l77314o?at_medium=RSS&at_campaign=rss" target="_blank">BBC Persian</a>، ۱۷ نوامبر ۲۰۲۶</span>
+  </div>
+  <p class="drop">مردم آبدانان در استان ایلام در اعتراض به آنچه قصور مسئولان در پی واژگونی مرگبار یک دستگاه اتوبوس حامل کارکنان شرکت نفت می‌خوانند، تجمع کرده‌اند. ویدئوهای منتشرشده در شبکه‌های اجتماعی نشان‌دهنده حضور گسترده معترضان در خیابان‌هاست.</p>
+  <p>بنابر اعلام پلیس راه راهور فراجا، در این حادثه ۱۳ نفر کشته و ۱۴ نفر مصدوم شده‌اند. در همین حال، دادستان آبدانان از اعلام جرم علیه مدیرعامل ان‌جی‌ال و مدیرکل راهداری استان ایلام خبر داده است که نشان‌دهنده پیگیری قضایی این حادثه است.</p>
+  <blockquote cite="https://www.bbc.com/persian/articles/cq8j48l77314o?at_medium=RSS&at_campaign=rss">
+    <p>دادستان آبدانان می‌گوید علیه مدیرعامل ان‌جی‌ال و مدیرکل راهداری استان ایلام اعلام جرم کرده است.</p>
+  </blockquote>
+</article>
+
+<article class="article">
+  <div class="article-kicker">تنش‌های ژئوپلیتیک</div>
+  <h2 class="lead">سرپرست وزارت نیروی دریایی آمریکا: از هزینه روزانه محاصره دریایی ایران بی‌اطلاعم</h2>
+  <h3 class="deck">در پی سوال سناتور الیزابت وارن در مورد هزینه‌های محاصره دریایی ایران، سرپرست وزارت نیروی دریایی آمریکا اظهار بی‌اطلاعی کرد، اما بر اهمیت تنگه هرمز تاکید نمود.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://t.me/mypersia24" target="_blank">MyPersia24</a>، ۱۷ نوامبر ۲۰۲۶</span>
+  </div>
+  <p class="drop">«کائو»، سرپرست وزارت نیروی دریایی آمریکا، در پاسخ به سوال سناتور الیزابت وارن درباره هزینه روزانه محاصره دریایی ایران برای ایالات متحده، اعلام کرد که از این هزینه بی‌اطلاع است.</p>
+  <p>با این حال، وی در ادامه اظهار داشت که «هزینه از دست دادن تنگه هرمز بسیار سنگین‌تر خواهد بود.» این اظهارات نشان‌دهنده اهمیت استراتژیک تنگه هرمز در سیاست‌های منطقه‌ای و جهانی و نگرانی آمریکا از هرگونه اخلال در عبور و مرور از این آبراه حیاتی است.</p>
+</article>
+
+<div class="section-header gold">ورزش ایران و جهان</div>
+
+<article class="article">
+  <h2 class="lead">خروج ناجی قلعه‌نویی، دوباره نعمتی و وظیفه تازه کادرفنی؛ ستاره بازی اول، گمشده بازی دوم!</h2>
+  <h3 class="deck">حسین گودرزی، یکی از سه بازیکن تعویضی بین دو نیمه بازی تیم ملی ایران با عراق، در بازی دوم نتوانست درخشش لازم را داشته باشد.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.khabarvarzeshi.com/news/563803/%D8%AE%D8%B1%D9%88%D8%AC-%D9%86%D8%A7%D8%AC%DB%8C-%D9%82%D9%84%D8%B9%D9%87-%D9%86%D9%88%DB%8C%DB%8C-%D8%AF%D9%88%D8%A8%D8%A7%D8%B1%D9%87-%D9%86%D8%B9%D9%85%D8%AA%DB%8C-%D9%88-%D9%88%D8%B8%DB%8C%D9%81%D9%87-%D8%AA%D8%A7%D8%B2%D9%87-%DA%A9%D8%A7%D8%AF%D8%B1%D9%81%D9%86%DB%8C" target="_blank">khabarvarzeshi</a>، 2026-11-17</span>
+  </div>
+  <p class="drop">حسین گودرزی، که در بازی اول تیم ملی فوتبال ایران مقابل عراق به عنوان یکی از سه بازیکن تعویضی در بین دو نیمه وارد میدان شده بود و عملکرد قابل قبولی از خود نشان داد، در بازی دوم نتوانست همان درخشش را تکرار کند.</p>
+  <p>این موضوع وظیفه جدیدی را برای کادرفنی تیم ملی به رهبری امیر قلعه‌نویی ایجاد می‌کند تا راهکارهایی برای حفظ ثبات و آمادگی بازیکنان در طول تورنمنت‌ها و بازی‌های فشرده پیدا کنند. به نظر می‌رسد نوسان عملکرد بازیکنان تعویضی می‌تواند چالش مهمی برای تیم ملی باشد.</p>
+</article>
+
+<article class="article">
+  <h2 class="lead">محمد نوازی: استقلالی نبودم؛ بعد از دربی به زندان افتادم و تیم ملی برایم تمام شد!</h2>
+  <h3 class="deck">محمد نوازی، ملی‌پوش اسبق استقلال، از ماجرای دربی جنجالی سال ۷۹ و پیامدهای آن برای خود، از جمله زندانی شدن و پایان دوران ملی، سخن گفت.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.khabarvarzeshi.com/news/563685/%D8%AE%D8%A8%D8%B1%D9%88%D8%B1%D8%B2%D8%B4%DB%8C-%DA%AF%D8%B1%D8%AF%DB%8C-%D9%85%D8%AD%D9%85%D8%AF-%D9%86%D9%88%D8%A7%D8%B2%DB%8C-%D8%A7%D8%B3%D8%AA%D9%82%D9%84%D8%A7%D9%84%DB%8C-%D9%86%D8%A8%D9%88%D8%AF%D9%85" target="_blank">khabarvarzeshi</a>، 2026-11-17</span>
+  </div>
+  <p class="drop">محمد نوازی، بازیکن سابق تیم ملی و باشگاه استقلال، در گفت‌وگویی از خاطرات تلخ دربی جنجالی سال ۱۳۷۹ (۲۰۰۰ میلادی) و تأثیرات ویرانگر آن بر زندگی حرفه‌ای خود پرده برداشت. او فاش کرد که پس از آن مسابقه پرحاشیه، زندانی شده و این اتفاق به محرومیت او از فوتبال و پایان رؤیای حضور در تیم ملی منجر شده است.</p>
+  <p>نوازی همچنین در اظهارنظری غافلگیرکننده بیان کرد که در ابتدا استقلالی نبوده است. این مصاحبه، ابعاد جدیدی از پشت پرده فوتبال ایران در دهه‌های گذشته را روشن می‌کند و نشان می‌دهد چگونه حواشی و تصمیمات انضباطی می‌توانستند سرنوشت حرفه‌ای بازیکنان را تغییر دهند.</p>
+</article>
+
+<div class="section-header gold">فوتبال اروپا</div>
+
+<article class="article">
+  <h2 class="lead">عملیات غیرمنتظره بشیکتاش برای جذب دروازه‌بان؛ رقابت برای نیوبل!</h2>
+  <h3 class="deck">بر اساس گزارش‌ها، باشگاه بشیکتاش ترکیه به دنبال جذب مادوکای اوکویه، دروازه‌بان نیجریه‌ای اودینزه، برای رقابت با الکساندر نیوبل است.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.hurriyet.com.tr/sporarena/besiktastan-surpriz-kaleci-operasyonu-nubele-rakip-43381692" target="_blank">Hürriyet Spor</a>، 2026-11-17</span>
+  </div>
+  <p class="drop">باشگاه بشیکتاش در تلاشی برای تقویت خط دروازه خود، به سراغ مادوکای اوکویه، دروازه‌بان جوان و آینده‌دار نیجریه‌ای که در حال حاضر برای تیم اودینزه ایتالیا بازی می‌کند، رفته است. این اقدام به منظور ایجاد رقابت و افزایش عمق نیمکت برای الکساندر نیوبل، دروازه‌بان فعلی این تیم، گزارش شده است.</p>
+  <p>این گمانه‌زنی‌ها در رسانه‌های ورزشی ترکیه و ایتالیا مطرح شده و نشان می‌دهد که بشیکتاش برای فصل آینده برنامه‌های جدی برای پست دروازه‌بانی دارد. جذب اوکویه می‌تواند به افزایش کیفیت و رقابت‌پذیری تیم در لیگ برتر ترکیه و مسابقات اروپایی کمک کند.</p>
+</article>
+
+<div class="section-header">اخبار محلی · کوشاداسی، سوکه، آیدین</div>
+
+<article class="article">
+  <div class="article-kicker">سیاست داخلی</div>
+  <h2 class="lead">کمیسیون برنامه و بودجه مجلس ترکیه؛ واکنش احزاب مخالف به انتصاب قیم و قتل زنان</h2>
+  <h3 class="deck">در جریان بررسی بودجه وزارت کشور در کمیسیون برنامه و بودجه مجلس ترکیه، نمایندگان احزاب مخالف به انتصاب قیم برای Sözcü TV و افزایش قتل زنان اعتراض کردند.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.aydinpost.com/tbmm-plan-ve-butce-komisyonu-muhalefet-partilerinden-kayyim-ve-kadin-cinayetlerine-tepki" target="_blank">Aydın Post</a>، ۱۷ نوامبر ۲۰۲۶</span>
+  </div>
+  <p class="drop">در نشست کمیسیون برنامه و بودجه مجلس ملی کبیر ترکیه که به بررسی بودجه سال ۲۰۲۷ وزارت کشور اختصاص داشت، نمایندگان احزاب مخالف به مسائل مختلفی اعتراض کردند.</p>
+  <p>نمایندگان حزب YENİ و CHP نسبت به انتصاب قیم برای شبکه تلویزیونی Sözcü TV اعتراض خود را ابراز داشتند، در حالی که عدالت کایا از حزب DEM به قتل زنان، مرگ‌های مشکوک زنان و حوادث خشونت‌آمیز در مدارس واکنش نشان داد. این اعتراضات نشان‌دهنده نگرانی‌های جدی در مورد آزادی بیان و حقوق بشر در ترکیه است.</p>
+</article>
+
+<article class="article">
+  <div class="article-kicker">سیاست حزبی</div>
+  <h2 class="lead">اوزگور اوزل از عدم استقبال زیدان کارالار گلایه کرد</h2>
+  <h3 class="deck">اوزگور اوزل، رهبر حزب جمهوری‌خواه خلق (CHP)، در سفر خود به آدانا از عدم استقبال زیدان کارالار، شهردار کلان‌شهر آدانا، ابراز دلخوری کرد.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.egedesonsoz.com/ozelden-zeydan-karalara-vefa-sitemi" target="_blank">Ege de Sonsöz</a>، ۱۷ نوامبر ۲۰۲۶</span>
+  </div>
+  <p class="drop">اوزگور اوزل، رهبر حزب جمهوری‌خواه خلق (CHP)، در جریان بازدید خود از آدانا، ضمن ابراز حمایت از شهرداران بازداشت‌شده، گله‌مندی خود را از عدم استقبال زیدان کارالار، شهردار کلان‌شهر آدانا، بیان کرد.</p>
+  <p>اوزل در سخنان خود گفت: «وقتی ما آمدیم، او از ما استقبال نکرد و بدرقه هم نکرد. اما وفاداری چیز دیگری است.» این اظهارات نشان‌دهنده تنش‌های داخلی در حزب CHP و اهمیت وفاداری در ساختار حزبی است.</p>
+</article>
+
+<article class="article">
+  <div class="article-kicker">محیط زیست</div>
+  <h2 class="lead">وزیر کوروم با کمیسر اقلیم اتحادیه اروپا در آنتالیا دیدار کرد</h2>
+  <h3 class="deck">مراد کوروم، وزیر محیط زیست، شهرسازی و تغییر اقلیم ترکیه، در حاشیه کنفرانس COP31 در آنتالیا با ووپکه هوکسترا، کمیسر اقلیم کمیسیون اروپا، دیدار و گفتگو کرد.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.aydinpost.com/bakan-kurum-ab-iklim-komiseri-hoekstra-ile-antalyada-gorustu-1" target="_blank">Aydın Post</a>، ۱۷ نوامبر ۲۰۲۶</span>
+  </div>
+  <p class="drop">مراد کوروم، وزیر محیط زیست، شهرسازی و تغییر اقلیم ترکیه، امروز در آنتالیا با ووپکه هوکسترا، کمیسر اقلیم کمیسیون اروپا، ملاقات کرد. این دیدار در چارچوب کنفرانس COP31 برگزار شد.</p>
+  <p>در این گفتگو، طرفین به بررسی دستور کار جهانی اقلیم، اولویت‌های دوره آتی و راه‌های تقویت همکاری‌ها در زمینه تغییرات اقلیمی پرداختند. این مذاکرات نشان‌دهنده تعهد ترکیه و اتحادیه اروپا به مقابله با چالش‌های زیست‌محیطی و یافتن راهکارهای مشترک است.</p>
+</article>
+
+<div class="section-header gold">ورزش محلی · ترکیه</div>
+
+<article class="article">
+  <h2 class="lead">آغاز فصل مسابقات اسب‌دوانی در آنتالیا با برنامه‌ای هیجان‌انگیز</h2>
+  <h3 class="deck">هیپودروم آنتالیا امروز با یک برنامه هشت مسابقه‌ای پرهیجان، فصل جدید مسابقات اسب‌دوانی را برای علاقه‌مندان آغاز می‌کند.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.hurriyet.com.tr/sporarena/antalyada-yaris-sezonu-aciliyor-heyecan-hic-bitmiyor-8-kosuluk-harika-program-iste-misliden-gunun-altili-analizi-43381441" target="_blank">Hürriyet Spor</a>، 2026-11-17</span>
+  </div>
+  <p class="drop">هیپودروم آنتالیا امروز با یک برنامه جذاب هشت مسابقه‌ای، آماده استقبال از دوستداران اسب‌دوانی است. این برنامه شامل رقابت‌های هندیکاپ دشوار با اسب‌های هم‌سطح و همچنین مسابقات مهمی با حضور اسب‌های برجسته خواهد بود.</p>
+  <p>تحلیلگران Misli پیش‌بینی‌های خود را برای «آلتلی» (مسابقه شش اسب) امروز ارائه کرده‌اند و انتظار می‌رود این افتتاحیه، فصلی پرشور و رقابتی را نوید دهد. این رویداد فرصتی عالی برای علاقه‌مندان به شرط‌بندی و تماشای اسب‌دوانی در منطقه آنتالیا است.</p>
+</article>
+
+<div class="section-header blue">گزارش از رم</div>
+
+<article class="article">
+  <div class="article-kicker">فرهنگ و هنر</div>
+  <h2 class="lead">پروژه «نقاشان و موزاییک‌کاران در سن پیترو» با همکاری مایکروسافت</h2>
+  <h3 class="deck">پروژه سه جلدی «نقاشان و موزاییک‌کاران در سن پیترو» با همکاری Fabbrica di San Pietro و مایکروسافت، به منظور ادغام در دوقلوی دیجیتال کلیسا، معرفی شد.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.ansa.it/sito/notizie/cultura/libri/2026/11/17/pittori-e-mosaicisti-a-san-pietro-progetto-della-fabbrica-di-san-pietro-e-microsoft_713882b0-7186-4a4a-ae1f-9cffa5ab1faf.html" target="_blank">ANSA Cultura</a>، ۱۷ نوامبر ۲۰۲۶</span>
+  </div>
+  <p class="drop">پروژه فرهنگی «نقاشان و موزاییک‌کاران در سن پیترو»، که شامل سه جلد کتاب است، با همکاری Fabbrica di San Pietro و شرکت مایکروسافت آغاز به کار کرده است. هدف این پروژه ادغام محتوای آن در «دوقلوی دیجیتال» کلیسای سن پیترو است.</p>
+  <p>این ابتکار، تلفیقی از هنر سنتی و فناوری مدرن را به نمایش می‌گذارد و به بازدیدکنندگان و محققان امکان می‌دهد تا به صورت دیجیتالی به جزئیات آثار هنری کلیسای جامع دسترسی پیدا کنند. این اقدام می‌تواند تجربه فرهنگی و آموزشی را برای عموم مردم غنی‌تر سازد.</p>
+</article>
+
+<article class="article">
+  <div class="article-kicker">سیاست اجتماعی</div>
+  <h2 class="lead">اصلاحیه قانون امنیت در ایتالیا: ممنوعیت شبکه‌های اجتماعی برای زیر ۱۳ سال</h2>
+  <h3 class="deck">در ایتالیا، اصلاحیه‌ای به لایحه امنیت اضافه شده که استفاده از شبکه‌های اجتماعی را برای افراد زیر ۱۳ سال ممنوع می‌کند و برای ۱۳ تا ۱۶ ساله‌ها نیز آن را منوط به اتصال به حساب والدین می‌داند.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.ansa.it/sito/notizie/politica/2026/11/17/emendamento-al-dl-sicurezza-divieto-di-social-agli-under-13-_f50ee740-ac1a-426d-bb89-b77139abfd54.html" target="_blank">ANSA Politica</a>، ۱۷ نوامبر ۲۰۲۶</span>
+  </div>
+  <p class="drop">یک اصلاحیه جدید به لایحه امنیت در ایتالیا اضافه شده که به موجب آن، استفاده از پلتفرم‌های شبکه‌های اجتماعی برای کودکان زیر ۱۳ سال به طور کامل ممنوع خواهد شد.</p>
+  <p>این قانون همچنین مقرر می‌دارد که افراد بین ۱۳ تا ۱۶ سال تنها در صورتی مجاز به داشتن حساب کاربری در شبکه‌های اجتماعی خواهند بود که حساب آن‌ها به حساب والدینشان متصل باشد. این اقدام با هدف حفاظت از کودکان در برابر خطرات فضای مجازی و تضمین نظارت والدین بر فعالیت‌های آنلاین آن‌ها صورت گرفته است.</p>
+</article>
+
+<div class="section-header green">بارسلونا · فرهنگ</div>
+
+<article class="article">
+  <div class="article-kicker">هنر و حراج</div>
+  <h2 class="lead">ون‌گوگ نازی‌ها را شکست می‌دهد: حراج تابلویی پس از توافق با وراث یهودی</h2>
+  <h3 class="deck">یک تابلوی نقاشی از ونسان ون‌گوگ، پس از توافق با وراث یهودی صاحبان پیشین آن، به مزایده گذاشته می‌شود.</h3>
+  <div class="byline-row">
+    <span class="name">به نقل از <a href="https://www.lavanguardia.com/cultura/20261117/11686793/gogh-derrota-nazis-subasta-herederos-judios.html" target="_blank">La Vanguardia Cultura</a>، ۱۷ نوامبر ۲۰۲۶</span>
+  </div>
+  <p class="drop">یک تابلوی ارزشمند از استاد نقاشی هلندی، ونسان ون‌گوگ، قرار است به زودی به حراج گذاشته شود. این اتفاق پس از دستیابی به توافقی مهم با وراث یهودی صاحبان قبلی این اثر هنری رخ می‌دهد که در دوران نازی‌ها مجبور به ترک آن شده بودند.</p>
+  <p>این حراج نه تنها از نظر هنری اهمیت دارد، بلکه از منظر تاریخی و اخلاقی نیز برجسته است؛ چرا که نشان‌دهنده تلاش برای جبران بی‌عدالتی‌های گذشته و بازگرداندن حقوق به صاحبان اصلی آثار هنری است که در دوران جنگ جهانی دوم به ناحق از آن‌ها سلب شده بود.</p>
+</article>
+
+<div class="section-header blue">آب و هوا</div>
+
+<div class="box">
+  <div class="weather-grid">
+    <div class="weather-cell">
+      <div class="day">سه‌شنبه</div>
+      <div class="temp">۱۶° / ۲۱° سانتی‌گراد</div>
+      <div class="cond">نیمه‌آفتابی</div>
+    </div>
+    <div class="weather-cell">
+      <div class="day">چهارشنبه</div>
+      <div class="temp">۱۹° / ۲۱° سانتی‌گراد</div>
+      <div class="cond">اغلب ابری</div>
+    </div>
+    <div class="weather-cell">
+      <div class="day">پنجشنبه</div>
+      <div class="temp">۲۱° / ۲۳° سانتی‌گراد</div>
+      <div class="cond">اغلب آفتابی</div>
+    </div>
+  </div>
+  <div class="city-weather">
+    <div class="cell">
+      <div class="city-name">کوشاداسی</div>
+      <div class="city-temp">۱۸° سانتی‌گراد، نیمه‌ابری</div>
+    </div>
+    <div class="cell">
+      <div class="city-name">رم</div>
+      <div class="city-temp">۱۸° سانتی‌گراد، باران خفیف</div>
+    </div>
+    <div class="cell">
+      <div class="city-name">بارسلونا</div>
+      <div class="city-temp">۲۰° سانتی‌گراد، ابری</div>
+    </div>
+  </div>
+</div>
+
+<div class="history-box">
+  <div class="history-title">چنین روزی در تاریخ</div>
+  <div class="history-item">
+    <span class="history-year">۱۸۶۹</span> کانال سوئز، آبراهی که دریای مدیترانه و دریای سرخ را به هم وصل می‌کند، پس از ۱۰ سال ساخت‌وساز رسماً افتتاح شد.
+  </div>
+  <div class="history-item">
+    <span class="history-year">۱۹۷۰</span> اتحاد جماهیر شوروی، فضاپیمای لونا ۱۷ را به همراه اولین مریخ‌نورد خود، لونوخود ۱، به سمت ماه پرتاب کرد.
+  </div>
+  <div class="history-item">
+    <span class="history-year">۱۹۸۹</span> انقلاب مخملی در چکسلواکی آغاز شد، که به سرنگونی رژیم کمونیستی در این کشور انجامید.
+  </div>
+</div>
+
+<div class="health-tip">
+  <div class="health-title">★ نکته سلامتی شبانه ★</div>
+  <div class="health-text">
+    برای داشتن خوابی آرام و عمیق، توصیه می‌شود که قبل از خواب، یک فنجان چای بابونه بنوشید. بابونه به دلیل خواص آرام‌بخش طبیعی خود شناخته شده است و می‌تواند به کاهش اضطراب و آماده‌سازی بدن برای استراحت کمک کند. همچنین، انجام چند حرکت کششی ملایم برای گردن و شانه‌ها می‌تواند به رهایی از تنش‌های روزانه و بهبود گردش خون کمک کرده و به شما در فرو رفتن به خوابی راحت‌تر یاری رساند.
+  </div>
+  <div class="health-text">
+    به یاد داشته باشید که مصرف نوشیدنی‌های کافئین‌دار مانند قهوه یا چای سیاه در ساعات پایانی شب می‌تواند چرخه خواب شما را مختل کند. همچنین، مطمئن شوید که داروهای تجویزشده خود را طبق دستور پزشک و در زمان مشخص مصرف می‌کنید، به خصوص اگر مصرف شبانه آن‌ها برای کنترل بیماری‌های مزمن ضروری است.
+  </div>
+</div>
+
+<div class="poetry-box">
+  <div class="poetry-title">★ شعر شبانه ★</div>
+  <div class="poetry-verses">دو چیز طیره‌ی عقل است: دم فروبستن<br>به وقت گفتن و گفتن به وقت خاموشی</div>
+  <div class="poetry-translation">دو چیز سبب خفت عقل است: لب فروبستن هنگامی که باید سخن گفت، و سخن گفتن هنگامی که باید خاموش بود.</div>
+  <div class="poetry-attribution">— سعدی · بوستان —</div>
+</div>
+
+<div class="closing">
+  <div class="closing-title">غروب یک روز دیگر...</div>
+  <div class="closing-text">با فرارسیدن غروب سه‌شنبه و آرامش شب، شهر کوشاداسی و جهان به استقبال فردایی دیگر می‌روند. اخبار امروز، از تنش‌های جهانی گرفته تا رویدادهای محلی و ورزشی، هر یک داستانی از تلاش و امید را روایت می‌کنند. بگذارید این شب، فرصتی برای تأمل و تجدید قوا باشد، تا با طلوع خورشید، آماده آغاز فصلی نو از زندگی و رویدادها باشیم.</div>
+</div>
+
+<div class="footer">
+  <div class="colophon">
+    روزنامه «کوشاداسی هرالد سان» — روزنامه فارسی‌زبان روزانه برای جامعه فارسی‌زبان در کوشاداسی و خارج.
+    منتشر شده توسط شرکت رسانه‌ای آفتاب شرق.
+  </div>
+  <div class="colophon">
+    منابع خبری امروز: BBC Persian، IranWire، MyPersia24، khabarvarzeshi، Hürriyet Spor، Aydın Post، Ege de Sonsöz، ANSA Cultura، ANSA Politica، La Vanguardia Cultura، Google Weather.
+  </div>
+  <div class="colophon">
+    شماره بعدی: چهارشنبه، ۲۷ آبان ۱۴۰۵
+  </div>
+</div>
+</div>
+</body>
+</html>
