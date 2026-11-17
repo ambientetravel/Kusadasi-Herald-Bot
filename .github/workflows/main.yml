@@ -2,6 +2,9 @@ name: Kusadasi Herald Automated Engine
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-and-deliver:
     runs-on: ubuntu-latest
@@ -23,3 +26,42 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python newspaper_bot.py
+
+      - name: Publish edition to the web (GitHub Pages)
+        if: always()
+        run: |
+          latest=$(ls -t kusadasi-herald-sun-*.html 2>/dev/null | head -1)
+          if [ -z "$latest" ]; then
+            echo "No edition file found — skipping web publish"
+            exit 0
+          fi
+          echo "Publishing $latest to docs/"
+          mkdir -p docs
+          touch docs/.nojekyll
+          cp "$latest" "docs/$latest"
+          cp "$latest" docs/index.html
+          git config user.name "Kusadasi Herald Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs
+          if git diff --cached --quiet; then
+            echo "No changes to publish"
+            exit 0
+          fi
+          git commit -m "Web: publish $latest"
+          git pull --rebase origin main || true
+          git push origin HEAD:main
+
+      - name: Announce web link on Telegram
+        if: always()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          latest=$(ls -t kusadasi-herald-sun-*.html 2>/dev/null | head -1)
+          if [ -z "$latest" ]; then exit 0; fi
+          url="https://ambientetravel.github.io/Kusadasi-Herald-Bot/$latest"
+          curl -sS "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "disable_web_page_preview=false" \
+            --data-urlencode "text=📰 نسخه‌ی تمام‌صفحه را اینجا باز کنید (روی آیپد و آیفون کامل باز می‌شود): ${url}" >/dev/null || true
+          echo "Announced link: $url"
