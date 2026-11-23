@@ -92,6 +92,9 @@ blockquote{margin:10px 0;padding:8px 12px;border-right:3px solid var(--red);back
 .turkish-main{font-size:22px;font-weight:800;color:var(--ink);margin:4px 0;}
 .turkish-meaning{font-size:13px;color:var(--ink-soft);}
 .turkish-ex{font-size:11px;font-style:italic;color:var(--faded);margin-top:4px;}
+.turkish-pron{font-size:13px;font-weight:700;color:var(--red);margin:3px 0;direction:ltr;}
+.turkish-ex strong{color:var(--ink);font-style:normal;}
+.turkish-note{font-size:11px;color:var(--ink-soft);margin-top:8px;padding-top:7px;border-top:1px dashed #f1caca;line-height:1.8;text-align:right;}
 .history-box{background:#f5f0e0;border-right:3px solid var(--gold);padding:10px 12px;margin:12px 0;font-size:12px;}
 .history-title{font-weight:800;color:var(--gold);font-size:13px;margin-bottom:6px;}
 .history-item{padding:4px 0;border-bottom:1px dotted #e5d8a5;line-height:1.7;}
@@ -248,6 +251,101 @@ SONG_ROTATION = [
 ]
 todays_song = SONG_ROTATION[now.timetuple().tm_yday % len(SONG_ROTATION)]
 print(f"🎵 Song today: {todays_song['artist']} — {todays_song['title']}")
+
+
+# --- 3e-bis. TURKISH LESSON OF THE DAY (curated, 28-day rotation) ---
+# Upgraded from a thin model-invented "word of the day" (which repeated and got
+# the Turkish/pronunciation wrong). Each entry is a real, useful lesson for a
+# Persian speaker living in / visiting Kusadasi: headword, Persian pronunciation,
+# meaning, a natural example sentence, and a usage/culture tip. Rendered verbatim.
+TURKISH_LESSONS = [
+    {"tr": "Günaydın", "pron": "گونایْدین", "fa": "صبح بخیر",
+     "ex_tr": "Günaydın komşu, nasılsın?", "ex_fa": "صبح بخیر همسایه، چطوری؟",
+     "note": "فقط تا حدود ظهر؛ بعدازظهر می‌گویند «İyi günler» (ایی گونلر)."},
+    {"tr": "Teşekkür ederim", "pron": "تِشِکّور اِدِریم", "fa": "خیلی ممنونم",
+     "ex_tr": "Yardımınız için teşekkür ederim.", "ex_fa": "برای کمکتان ممنونم.",
+     "note": "کوتاه‌تر: teşekkürler (تِشِکّورلر) یا sağ ol (ساغ اُل) خودمانی."},
+    {"tr": "Ne kadar?", "pron": "نه قَدَر؟", "fa": "چند است؟ (قیمت)",
+     "ex_tr": "Bu domates ne kadar?", "ex_fa": "این گوجه چند است؟",
+     "note": "در بازار سؤال طلایی؛ جواب را به لیر می‌شنوید."},
+    {"tr": "Hesap, lütfen", "pron": "حِساب، لوتفن", "fa": "صورتحساب، لطفاً",
+     "ex_tr": "Hesap, lütfen. Kart geçer mi?", "ex_fa": "صورتحساب لطفاً. کارت قبول می‌کنید؟",
+     "note": "lütfen = لطفاً · kart geçer mi? = کارت می‌شود؟"},
+    {"tr": "Afiyet olsun", "pron": "آفیت اُلسون", "fa": "نوش جان",
+     "ex_tr": "Çok lezzetliydi, afiyet olsun!", "ex_fa": "خیلی خوشمزه بود، نوش جان!",
+     "note": "هم پیش از غذا هم پس از آن گفته می‌شود."},
+    {"tr": "Kolay gelsin", "pron": "کُلای گلسین", "fa": "خسته نباشی",
+     "ex_tr": "Kolay gelsin usta!", "ex_fa": "خسته نباشی استاد!",
+     "note": "به هرکس مشغول کار است می‌گویید؛ معادل دقیق «خسته نباشید»."},
+    {"tr": "Buyurun", "pron": "بویورون", "fa": "بفرمایید",
+     "ex_tr": "Buyurun efendim, nasıl yardımcı olabilirim?", "ex_fa": "بفرمایید آقا، چطور کمکتان کنم؟",
+     "note": "فروشنده و پیشخدمت مدام می‌گویند: یعنی در خدمتم."},
+    {"tr": "Bir şişe su, lütfen", "pron": "بیر شیشه سو، لوتفن", "fa": "یک بطری آب، لطفاً",
+     "ex_tr": "Bir şişe su, lütfen — soğuk olsun.", "ex_fa": "یک بطری آب لطفاً — خنک باشد.",
+     "note": "bir = یک · şişe = بطری · soğuk = سرد."},
+    {"tr": "İyi günler", "pron": "ایی گونلر", "fa": "روز بخیر",
+     "ex_tr": "İyi günler, görüşürüz.", "ex_fa": "روز بخیر، می‌بینمتان.",
+     "note": "هم هنگام ورود هم هنگام خروج از مغازه."},
+    {"tr": "Görüşürüz", "pron": "گوروشوروز", "fa": "می‌بینمت / فعلاً",
+     "ex_tr": "Hadi görüşürüz!", "ex_fa": "خب، می‌بینمت!",
+     "note": "رسمی‌ترش: hoşça kalın (هُشچا کالین)."},
+    {"tr": "Affedersiniz", "pron": "آفّدرسینیز", "fa": "ببخشید",
+     "ex_tr": "Affedersiniz, otogar nerede?", "ex_fa": "ببخشید، ترمینال کجاست؟",
+     "note": "برای جلب‌توجه یا عذرخواهی سبک."},
+    {"tr": "Nerede?", "pron": "نِرِده؟", "fa": "کجاست؟",
+     "ex_tr": "Tuvalet nerede?", "ex_fa": "دستشویی کجاست؟",
+     "note": "nereye? (نِره‌یه) = به کجا؟ · nereden? (نِره‌دن) = از کجا؟"},
+    {"tr": "Var mı?", "pron": "وار می؟", "fa": "هست؟ / دارید؟",
+     "ex_tr": "Taze balık var mı?", "ex_fa": "ماهی تازه دارید؟",
+     "note": "yok (یوک) = نیست · var (وار) = هست."},
+    {"tr": "Ne zaman?", "pron": "نه زامان؟", "fa": "کِی؟",
+     "ex_tr": "Otobüs ne zaman kalkıyor?", "ex_fa": "اتوبوس کی حرکت می‌کند؟",
+     "note": "پاسخ معمولاً با ساعت می‌آید."},
+    {"tr": "Çok güzel", "pron": "چُک گوزل", "fa": "خیلی زیبا / عالی",
+     "ex_tr": "Manzara çok güzel!", "ex_fa": "منظره خیلی زیباست!",
+     "note": "çok = خیلی · güzel = زیبا/خوب."},
+    {"tr": "Anlamadım", "pron": "آنلامادیم", "fa": "نفهمیدم",
+     "ex_tr": "Pardon, anlamadım. Tekrar eder misiniz?", "ex_fa": "ببخشید نفهمیدم، دوباره می‌گویید؟",
+     "note": "جمله‌ی نجات‌بخشِ تازه‌واردها."},
+    {"tr": "İndirim var mı?", "pron": "ایندیریم وار می؟", "fa": "تخفیف دارید؟",
+     "ex_tr": "İndirim var mı? Biraz pahalı.", "ex_fa": "تخفیف دارید؟ کمی گران است.",
+     "note": "pahalı (پاهالی) = گران · ucuz (اوجوز) = ارزان."},
+    {"tr": "Sağ ol", "pron": "ساغ اُل", "fa": "دمت گرم (خودمانی)",
+     "ex_tr": "Sağ ol kardeşim.", "ex_fa": "دمت گرم داداش.",
+     "note": "به بزرگ‌تر با احترام: sağ olun (ساغ اُلون)."},
+    {"tr": "Hoş geldiniz", "pron": "هُش گلدینیز", "fa": "خوش آمدید",
+     "ex_tr": "Hoş geldiniz! Buyurun oturun.", "ex_fa": "خوش آمدید! بفرمایید بنشینید.",
+     "note": "پاسخش: hoş bulduk (هُش بولدوک)."},
+    {"tr": "Kaç lira?", "pron": "قاچ لیرا؟", "fa": "چند لیر؟",
+     "ex_tr": "Bu kaç lira?", "ex_fa": "این چند لیر است؟",
+     "note": "kaç = چندتا/چند؛ برای قیمت و تعداد."},
+    {"tr": "Yardım eder misiniz?", "pron": "یاردیم اِدِر میسینیز؟", "fa": "کمکم می‌کنید؟",
+     "ex_tr": "Yardım eder misiniz? Kayboldum.", "ex_fa": "کمکم می‌کنید؟ گم شده‌ام.",
+     "note": "kayboldum = گم شدم."},
+    {"tr": "Acıktım", "pron": "آجیکتیم", "fa": "گرسنه‌ام",
+     "ex_tr": "Çok acıktım, nerede yemek yiyebiliriz?", "ex_fa": "خیلی گرسنه‌ام، کجا غذا بخوریم؟",
+     "note": "susadım (سوسادیم) = تشنه‌ام."},
+    {"tr": "Ne demek?", "pron": "نه دِمَک؟", "fa": "یعنی چه؟",
+     "ex_tr": "Pardon, 'kolay gelsin' ne demek?", "ex_fa": "ببخشید، «کُلای گلسین» یعنی چه؟",
+     "note": "بهترین راه پرسیدن معنی یک کلمه."},
+    {"tr": "Tamam", "pron": "تامام", "fa": "باشه / خوب",
+     "ex_tr": "Tamam, anlaştık.", "ex_fa": "باشه، قبول.",
+     "note": "پرکاربردترین واژه‌ی تأیید در ترکی."},
+    {"tr": "Yavaş, lütfen", "pron": "یاواش، لوتفن", "fa": "آهسته، لطفاً",
+     "ex_tr": "Lütfen yavaş konuşur musunuz?", "ex_fa": "لطفاً آهسته صحبت می‌کنید؟",
+     "note": "yavaş = آهسته · hızlı (هیزلی) = تند."},
+    {"tr": "Taze ekmek", "pron": "تازه اکمک", "fa": "نان تازه",
+     "ex_tr": "Taze ekmek var mı?", "ex_fa": "نان تازه دارید؟",
+     "note": "taze همان «تازه»ی فارسی است · ekmek = نان."},
+    {"tr": "Bir çay, lütfen", "pron": "بیر چای، لوتفن", "fa": "یک چای، لطفاً",
+     "ex_tr": "Bir çay, lütfen. Açık olsun.", "ex_fa": "یک چای لطفاً. کم‌رنگ باشد.",
+     "note": "açık (آچیک) = کم‌رنگ · koyu (کُیو) = پررنگ."},
+    {"tr": "Hoşça kalın", "pron": "هُشچا کالین", "fa": "خداحافظ (مؤدبانه)",
+     "ex_tr": "Teşekkürler, hoşça kalın.", "ex_fa": "ممنون، خداحافظ.",
+     "note": "کسی که می‌ماند می‌گوید: güle güle (گوله گوله)."},
+]
+todays_lesson = TURKISH_LESSONS[(now.timetuple().tm_yday + 3) % len(TURKISH_LESSONS)]
+print(f"🇹🇷 Turkish lesson today: {todays_lesson['tr']}")
 
 
 # --- 3f. PERSIAN POETRY ROTATION (evening edition — 14-day cycle) ---
@@ -1090,9 +1188,18 @@ if MEMORIAL_MODE:
 # Recipe goes to morning because the Migros basket aligns with the day's shopping
 # pattern. By evening it's too late to act on.
 
-MORNING_SECTIONS = f"""**۱۰.** div.turkish-word — **کلمه ترکی روز** (Turkish Word of the Day):
-   یک کلمه یا عبارت ترکی روزمره با ترجمه فارسی و یک مثال کوتاه. **متفاوت از ترانه روز پایین.**
-   ساختار: <div class="turkish-word"> با turkish-title "★ کلمه ترکی روز ★"، turkish-main برای کلمه ترکی، turkish-meaning برای ترجمه فارسی، turkish-ex برای جمله مثال (ترکی + ترجمه فارسی).
+MORNING_SECTIONS = f"""**۱۰.** div.turkish-word — **ترکی امروز · درس روز** (Turkish Lesson of the Day):
+
+   ⭐ **درس امروز از فهرست داخلی انتخاب شده — دقیقاً همین بلوک را بدون تغییر بنویسید:**
+   <div class="turkish-word">
+     <div class="turkish-title">★ ترکی امروز · یک قدم جلوتر ★</div>
+     <div class="turkish-main">{todays_lesson['tr']}</div>
+     <div class="turkish-pron">🗣 {todays_lesson['pron']}</div>
+     <div class="turkish-meaning">{todays_lesson['fa']}</div>
+     <div class="turkish-ex"><strong>{todays_lesson['ex_tr']}</strong><br>{todays_lesson['ex_fa']}</div>
+     <div class="turkish-note">💡 {todays_lesson['note']}</div>
+   </div>
+   ⚠️ هیچ حرف ترکی را از خودتان عوض/اضافه نکنید؛ فقط همین بلوک را عیناً قرار دهید.
 
 **۱۱.** div.turkish-word (با کلاس دوم) — **ترانه ترکی روز** (Turkish Song of the Day):
 
@@ -1187,7 +1294,7 @@ EVENING_SECTIONS = f"""**۱۰.** div.history-box — ۳ رویداد تاریخ�
    • برای این کار، در مقاله انتخابی، یک پاراگراف چهارم با کلاس معمولی <p> اضافه کنید که شروع آن «در تحلیل خبر:» باشد.
    • فقط **یک یا دو** مقاله را گسترش دهید — نه همه.
 
-⛔ **در نسخه عصر این بخش‌ها وجود ندارد:** آشپزی، میگروس، کلمه ترکی، ترانه ترکی. آن‌ها در نسخه صبح هستند."""
+⛔ **در نسخه عصر این بخش‌ها وجود ندارد:** آشپزی، میگروس، درس ترکی، ترانه ترکی. آن‌ها در نسخه صبح هستند."""
 
 
 is_morning = (edition_en == "Morning")
