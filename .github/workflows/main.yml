@@ -51,6 +51,25 @@ jobs:
           git pull --rebase origin main || true
           git push origin HEAD:main
 
+      - name: Ensure the page is live (self-heal Pages deploy)
+        if: always()
+        run: |
+          latest=$(ls -t kusadasi-herald-sun-*.html 2>/dev/null | head -1)
+          if [ -z "$latest" ]; then exit 0; fi
+          url="https://ambientetravel.github.io/Kusadasi-Herald-Bot/$latest"
+          for attempt in 1 2 3 4 5 6; do
+            sleep 40
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+            echo "liveness check $attempt: $code  $url"
+            if [ "$code" = "200" ]; then echo "page is live"; exit 0; fi
+            if [ "$attempt" -ge 3 ]; then
+              echo "deploy looks stuck - nudging a fresh Pages redeploy"
+              git commit --allow-empty -m "Redeploy Pages (self-heal $attempt)" || true
+              git push origin HEAD:main || true
+            fi
+          done
+          echo "WARN: page not confirmed live after retries"
+
       - name: Announce web link on Telegram
         if: always()
         env:
