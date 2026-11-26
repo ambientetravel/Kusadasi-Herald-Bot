@@ -122,6 +122,14 @@ local_hour = (now.hour + 3) % 24  # Kusadasi is UTC+3
 is_morning = local_hour < 12
 edition_en = "Morning" if is_morning else "Evening"
 edition_fa = "بامداد" if is_morning else "عصر"
+# Manual override: workflow_dispatch input FORCE_EDITION=morning|evening forces
+# the edition regardless of the clock (used to re-issue a fresh edition).
+_force_ed = os.environ.get("FORCE_EDITION", "").strip().lower()
+if _force_ed in ("morning", "evening"):
+    is_morning = (_force_ed == "morning")
+    edition_en = "Morning" if is_morning else "Evening"
+    edition_fa = "بامداد" if is_morning else "عصر"
+    print(f"⏰ Edition forced to {edition_en} via FORCE_EDITION")
 today_str = now.strftime("%Y-%m-%d")
 today_human_en = now.strftime("%A, %d %B %Y")
 
